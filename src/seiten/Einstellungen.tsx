@@ -114,7 +114,7 @@ export function Einstellungen({ z, aendere, katalog, gemeinsam }: Props) {
         <h2>Daten</h2>
         <p className="klein">
           {gemeinsam.haushalt
-            ? 'Eine Sicherung ist eine Kopie des gemeinsamen Stands. Einlesen und Zurücksetzen gelten für den ganzen Haushalt.'
+            ? 'Eine Sicherung ist eine Kopie des gemeinsamen Stands. Einlesen ändert Rezepte, Pläne und Einstellungen für den ganzen Haushalt.'
             : 'Alles liegt nur in diesem Browser. Mit einer Sicherung übertragt ihr den Stand auf ein anderes Gerät oder schützt ihn vor dem Löschen der Browserdaten.'}
         </p>
         <div className="aktionen">
@@ -123,9 +123,12 @@ export function Einstellungen({ z, aendere, katalog, gemeinsam }: Props) {
           <input ref={datei} type="file" accept="application/json,.json" hidden onChange={(e) => e.target.files?.[0] && einlesen(e.target.files[0])} />
         </div>
         {meldung && <p className="klein" role="status">{meldung}</p>}
-        <button className="gefahr" onClick={() => {
-          if (confirm('Alles auf den Anfang zurücksetzen? Pläne, eigene Rezepte und Einstellungen gehen verloren.')) aendere(() => startzustand())
-        }}>Alles zurücksetzen</button>
+        {/* Im Haushalt nicht: Pläne werden dort nie gelöscht, sie kämen beim nächsten Abgleich zurück. */}
+        {!gemeinsam.haushalt && (
+          <button className="gefahr" onClick={() => {
+            if (confirm('Alles auf den Anfang zurücksetzen? Pläne, eigene Rezepte und Einstellungen gehen verloren.')) aendere(() => startzustand())
+          }}>Alles zurücksetzen</button>
+        )}
       </section>
     </>
   )

@@ -69,6 +69,11 @@ Werte aus `.env.example` setzen (lokal in `.env`, beim Hosting als Umgebungsvari
 Supabase unter Authentication → URL Configuration die Adresse der App als Site URL eintragen,
 damit der Bestätigungslink nach der Registrierung dorthin führt.
 
+Das Projekt liegt in einer eigenen Supabase-Organisation im Tarif Free (Frankfurt). Ein
+Free-Projekt pausiert nach sieben Tagen ohne Nutzung; bei wöchentlicher Planung kommt das
+kaum vor, und im Supabase-Dashboard lässt es sich mit einem Klick wieder starten. Bis dahin
+arbeitet die App mit dem Stand auf dem Gerät weiter und schickt danach nach.
+
 Die Datenbankprüfung läuft gegen eine Wegwerf-Datenbank, nie gegen das echte Projekt:
 
 ```bash

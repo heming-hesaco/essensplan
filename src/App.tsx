@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { lade, speichere, type Zustand } from './lib/speicher'
-import { useGemeinsam } from './lib/useGemeinsam'
+import { aenderungenText, useGemeinsam } from './lib/useGemeinsam'
 import { heuteIso, letzterSamstag, naechsterSamstag } from './lib/woche'
 import { baueKatalog } from './lib/zutaten'
 import { Einkauf } from './seiten/Einkauf'
@@ -69,7 +69,7 @@ export function App() {
         )}
         {gemeinsam.haushalt && gemeinsam.verbindung === 'offline' && (
           <p className="hinweis" role="status">
-            Kein Netz. {gemeinsam.wartend > 0 ? `${gemeinsam.wartend} Änderungen werden nachgeschickt, sobald es wieder da ist.` : 'Änderungen werden nachgeschickt.'}
+            Kein Netz. {gemeinsam.wartend > 0 ? `${aenderungenText(gemeinsam.wartend)} ${gemeinsam.wartend === 1 ? 'wird' : 'werden'} nachgeschickt, sobald es wieder da ist.` : 'Änderungen werden nachgeschickt.'}
           </p>
         )}
         {bereich === 'plan' && (

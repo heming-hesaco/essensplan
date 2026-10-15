@@ -11,7 +11,8 @@ export interface Haushalt {
   id: string
   name: string
   einladungscode: string
-  mitglieder: number
+  /** null, solange nicht vom Server geladen – eine geratene Zahl stünde sonst in der Lösch-Warnung. */
+  mitglieder: number | null
 }
 
 export type Verbindung = 'aus' | 'laedt' | 'verbunden' | 'offline'
@@ -33,6 +34,8 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
   const [email, setEmail] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [haushalt, setHaushalt] = useState<Haushalt | null>(null)
+  /** Für welches Konto schon feststeht, ob es einen Haushalt hat. */
+  const [geprueftFuer, setGeprueftFuer] = useState<string | null>(null)
   const [verbindung, setVerbindung] = useState<Verbindung>('aus')
   const [wartend, setWartend] = useState(() => ladeWarteschlange().length)
   const [fehler, setFehler] = useState('')
@@ -119,7 +122,7 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
     } as Zeilen)
     for (const v of schlange.current) z = wendeAn(z, v)
     setzeVomServer(z)
-    setHaushalt({ id, name: h.data.name, einladungscode: h.data.einladungscode, mitglieder: m.count ?? 1 })
+    setHaushalt({ id, name: h.data.name, einladungscode: h.data.einladungscode, mitglieder: m.error ? null : m.count })
     setVerbindung('verbunden')
   }, [senden, setzeVomServer])
 
@@ -138,7 +141,9 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
     return () => data.subscription.unsubscribe()
   }, [])
 
-  // Zu welchem Haushalt gehört das Konto?
+  // Zu welchem Haushalt gehört das Konto? Scheitert die Frage am Netz, wird sie beim
+  // nächsten „online“ wiederholt – sonst bliebe der Abgleich bis zum Neuladen aus.
+  const [versuch, setVersuch] = useState(0)
   useEffect(() => {
     if (!supabase || !userId) {
       setHaushalt(null)
@@ -150,10 +155,15 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
     supabase.from('mitglieder').select('haushalt_id').eq('user_id', userId).maybeSingle().then(({ data, error }) => {
       if (abgebrochen) return
       if (error) {
-        setVerbindung(istNetzfehler(error) ? 'offline' : 'aus')
+        if (istNetzfehler(error)) setVerbindung('offline')
+        else {
+          setFehler(error.message)
+          setVerbindung('aus')
+        }
         return
       }
-      if (data) setHaushalt((alt) => (alt?.id === data.haushalt_id ? alt : { id: data.haushalt_id, name: '', einladungscode: '', mitglieder: 1 }))
+      setGeprueftFuer(userId)
+      if (data) setHaushalt((alt) => (alt?.id === data.haushalt_id ? alt : { id: data.haushalt_id, name: '', einladungscode: '', mitglieder: null }))
       else {
         setHaushalt(null)
         setVerbindung('aus')
@@ -162,7 +172,14 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
     return () => {
       abgebrochen = true
     }
-  }, [userId])
+  }, [userId, versuch])
+
+  useEffect(() => {
+    if (!userId || geprueftFuer === userId) return
+    const nochmal = () => setVersuch((v) => v + 1)
+    window.addEventListener('online', nochmal)
+    return () => window.removeEventListener('online', nochmal)
+  }, [userId, geprueftFuer])
 
   // Im Haushalt: alles laden, Änderungen des anderen Handys mitlesen, bei Rückkehr abgleichen.
   useEffect(() => {
@@ -238,7 +255,7 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
     const { data, error } = await supabase!.rpc('haushalt_anlegen', { p_name: name })
     if (error) return setFehler(error.message)
     setzeSchlange(einreihen([], aenderungen(leererZustand(), zRef.current)))
-    setHaushalt({ id: data as string, name, einladungscode: '', mitglieder: 1 })
+    setHaushalt({ id: data as string, name, einladungscode: '', mitglieder: null })
   }
 
   /** Beitreten: der Stand dieses Geräts wird durch den des Haushalts ersetzt. */
@@ -247,7 +264,7 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
     const { data, error } = await supabase!.rpc('haushalt_beitreten', { p_code: code })
     if (error) return setFehler(error.message)
     setzeSchlange([])
-    setHaushalt({ id: data as string, name: '', einladungscode: '', mitglieder: 2 })
+    setHaushalt({ id: data as string, name: '', einladungscode: '', mitglieder: null })
   }
 
   const verlassen = async () => {
@@ -269,9 +286,14 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
   return {
     eingerichtet: supabase !== null,
     email, haushalt, verbindung, wartend, fehler,
+    haushaltGeprueft: userId !== null && geprueftFuer === userId,
     melde, anmelden, registrieren, abmelden, anlegen, beitreten, verlassen, umbenennen,
     neuLaden: ladeAlles,
   }
 }
 
 export type Gemeinsam = ReturnType<typeof useGemeinsam>
+
+export function aenderungenText(n: number): string {
+  return n === 1 ? '1 Änderung' : `${n} Änderungen`
+}

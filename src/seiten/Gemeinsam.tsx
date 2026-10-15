@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Gemeinsam } from '../lib/useGemeinsam'
+import { aenderungenText, type Gemeinsam } from '../lib/useGemeinsam'
 
 const STATUS = {
   aus: 'Nicht verbunden',
@@ -67,6 +67,17 @@ export function GemeinsamBereich({ g }: { g: Gemeinsam }) {
     )
   }
 
+  // Bis feststeht, ob das Konto schon einen Haushalt hat, kein „Anlegen“ anbieten –
+  // ein Klick darauf liefe sonst in „gehört schon zu einem Haushalt“.
+  if (!g.haushalt && !g.haushaltGeprueft) {
+    return (
+      <section className="karte formular">
+        <h2>Gemeinsam nutzen</h2>
+        <p className="klein" role="status">Angemeldet als {g.email}. {g.verbindung === 'offline' ? 'Kein Netz – es geht weiter, sobald es wieder da ist.' : 'Verbindet …'}</p>
+      </section>
+    )
+  }
+
   if (!g.haushalt) {
     return (
       <section className="karte formular">
@@ -109,9 +120,9 @@ export function GemeinsamBereich({ g }: { g: Gemeinsam }) {
       <h2>Gemeinsam nutzen</h2>
       <p className="klein" role="status">
         <span className={`punkt ${g.verbindung}`} aria-hidden="true" /> {STATUS[g.verbindung]}
-        {g.wartend > 0 && ` · ${g.wartend} Änderungen warten`}
+        {g.wartend > 0 && ` · ${aenderungenText(g.wartend)} ${g.wartend === 1 ? 'wartet' : 'warten'}`}
       </p>
-      <p><strong>{h.name || 'Haushalt'}</strong> · {h.mitglieder === 1 ? 'nur dieses Konto' : `${h.mitglieder} Konten`}</p>
+      <p><strong>{h.name || 'Haushalt'}</strong>{h.mitglieder !== null && ` · ${h.mitglieder === 1 ? 'nur dieses Konto' : `${h.mitglieder} Konten`}`}</p>
       {h.einladungscode && (
         <div className="code-zeile">
           <span className="klein">Einladungscode fürs zweite Handy</span>
@@ -125,7 +136,7 @@ export function GemeinsamBereich({ g }: { g: Gemeinsam }) {
       <div className="aktionen">
         <button
           onClick={mit(async () => {
-            if (g.wartend > 0 && !confirm(`${g.wartend} Änderungen sind noch nicht übertragen und gehen beim Abmelden verloren. Trotzdem abmelden?`)) return
+            if (g.wartend > 0 && !confirm(`${aenderungenText(g.wartend)} ${g.wartend === 1 ? 'ist' : 'sind'} noch nicht übertragen und ${g.wartend === 1 ? 'geht' : 'gehen'} beim Abmelden verloren. Trotzdem abmelden?`)) return
             await g.abmelden()
           })}
         >
@@ -133,8 +144,9 @@ export function GemeinsamBereich({ g }: { g: Gemeinsam }) {
         </button>
         <button
           className="gefahr"
+          disabled={h.mitglieder === null}
           onClick={mit(async () => {
-            const letzter = h.mitglieder <= 1
+            const letzter = (h.mitglieder ?? 1) <= 1
             if (!confirm(letzter
               ? 'Ihr seid das letzte Konto im Haushalt. Beim Verlassen wird er mit allen gemeinsamen Daten gelöscht. Der Stand bleibt auf diesem Handy. Fortfahren?'
               : 'Haushalt verlassen? Der Stand bleibt auf diesem Handy, wird aber nicht mehr abgeglichen.')) return
