@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { lade, speichere, type Zustand } from './lib/speicher'
+import { useGemeinsam } from './lib/useGemeinsam'
 import { heuteIso, letzterSamstag, naechsterSamstag } from './lib/woche'
 import { baueKatalog } from './lib/zutaten'
 import { Einkauf } from './seiten/Einkauf'
@@ -39,7 +40,23 @@ export function App() {
     setSpeicherOk(speichere(z))
   }, [z])
 
-  const aendere = (f: (z: Zustand) => Zustand) => setZ((alt) => f(alt))
+  // Der aktuelle Stand steht zusätzlich in einem Ref: Änderungen werden davon abgeleitet,
+  // nicht in einem setState-Updater – der darf keine Nebenwirkung haben (StrictMode ruft
+  // ihn doppelt auf), und hier hängt das Einreihen für den Abgleich dran.
+  const zRef = useRef(z)
+  const setzeVomServer = useCallback((neu: Zustand) => {
+    zRef.current = neu
+    setZ(neu)
+  }, [])
+  const gemeinsam = useGemeinsam({ zRef, setzeVomServer })
+
+  const aendere = (f: (z: Zustand) => Zustand) => {
+    const alt = zRef.current
+    const neu = f(alt)
+    zRef.current = neu
+    setZ(neu)
+    gemeinsam.melde(alt, neu)
+  }
 
   return (
     <div className="app">
@@ -48,6 +65,11 @@ export function App() {
           <p className="warnung">
             Speichern im Browser klappt gerade nicht (privates Fenster?). Änderungen gehen beim
             Schließen verloren.
+          </p>
+        )}
+        {gemeinsam.haushalt && gemeinsam.verbindung === 'offline' && (
+          <p className="hinweis" role="status">
+            Kein Netz. {gemeinsam.wartend > 0 ? `${gemeinsam.wartend} Änderungen werden nachgeschickt, sobald es wieder da ist.` : 'Änderungen werden nachgeschickt.'}
           </p>
         )}
         {bereich === 'plan' && (
@@ -60,7 +82,7 @@ export function App() {
           <Einkauf z={z} aendere={aendere} katalog={katalog} woche={woche} setWoche={setWoche} />
         )}
         {bereich === 'rezepte' && <Rezepte z={z} aendere={aendere} katalog={katalog} />}
-        {bereich === 'einstellungen' && <Einstellungen z={z} aendere={aendere} katalog={katalog} />}
+        {bereich === 'einstellungen' && <Einstellungen z={z} aendere={aendere} katalog={katalog} gemeinsam={gemeinsam} />}
       </main>
       <nav className="leiste" aria-label="Bereiche">
         {BEREICHE.map((b) => (

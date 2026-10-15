@@ -40,12 +40,43 @@ Linsen-Bolognese, Lasagne und Minestrone in anderen Kategorien. Eigene Rezepte a
 ändern, kopieren, löschen. Für eine neue Zutat fragt das Formular, in welchem Laden ihr sie
 kauft. Unter Einstellungen lässt sich für jede Zutat der Laden ändern.
 
-## Wo die Daten liegen
+## Gemeinsamer Stand auf beiden Handys
 
-**Nur im Browser des jeweiligen Geräts** (`localStorage`). Es gibt kein Konto und keinen
-Server. Unter Einstellungen → Daten lässt sich eine Sicherung herunterladen und auf dem
-zweiten Handy einlesen. Ein gemeinsamer Stand auf beiden Handys ist der erste Punkt der
-nächsten Stufe.
+Unter **Einstellungen → Gemeinsam nutzen** legt jeder ein Konto an (E-Mail und Passwort).
+Der Erste legt einen **Haushalt** an – sein bisheriger Stand wird der Anfang – und gibt den
+**Einladungscode** (acht Zeichen) weiter. Der Zweite tritt damit bei; sein Stand wird durch
+den des Haushalts ersetzt. Danach erscheint jede Änderung sofort auf dem anderen Handy.
+
+Wie das gebaut ist:
+
+- **Ein Haken ist eine eigene Zeile.** Wer am Markt abhakt und wer gleichzeitig bei Aldi
+  abhakt, überschreibt sich nicht. Pläne, Rezepte und Einstellungen sind je Woche bzw. je
+  Rezept eine Zeile; dort gewinnt die spätere Änderung.
+- **Ohne Netz geht nichts verloren.** Jede Änderung kommt zuerst in eine Warteschlange im
+  Gerätespeicher und wird nachgeschickt, sobald das Netz wieder da ist – auch nach einem
+  Schließen der App. Oben steht dann „Kein Netz“.
+- **Gelöscht wird nicht, sondern markiert** (`geloescht`, `an = false`). Realtime liefert
+  Löschungen ohne Zeilenrechte an alle aus, Updates nur an die Mitglieder des Haushalts.
+- **Zugriff entscheidet die Datenbank** (Row Level Security): Jedes Konto sieht nur den
+  eigenen Haushalt. Haushalte entstehen und werden betreten nur über die Funktionen
+  `haushalt_anlegen`, `haushalt_beitreten`, `haushalt_verlassen`. Wer als Letzter geht,
+  löscht den Haushalt mit allen gemeinsamen Daten. Prüfung: `supabase/tests/haushalt.sql`.
+- Ohne `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` läuft die App wie vorher nur auf
+  dem Gerät.
+
+Einrichten: Supabase-Projekt anlegen, `supabase/migrations/*.sql` einspielen, die beiden
+Werte aus `.env.example` setzen (lokal in `.env`, beim Hosting als Umgebungsvariablen). In
+Supabase unter Authentication → URL Configuration die Adresse der App als Site URL eintragen,
+damit der Bestätigungslink nach der Registrierung dorthin führt.
+
+Die Datenbankprüfung läuft gegen eine Wegwerf-Datenbank, nie gegen das echte Projekt:
+
+```bash
+docker run -d --name pg-test -e POSTGRES_PASSWORD=postgres -p 54329:5432 public.ecr.aws/supabase/postgres:17.6.1.010
+export PGPASSWORD=postgres
+psql -h localhost -p 54329 -U postgres -d postgres -f supabase/migrations/20261015190000_gemeinsamer_haushalt.sql
+psql -h localhost -p 54329 -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/tests/haushalt.sql
+```
 
 ## Benutzen
 
@@ -70,13 +101,16 @@ src/lib/startrezepte.ts Startrezepte und Frühstücks-Baukasten
 src/lib/planer.ts       Wochenvorschlag, Tauschen, Überblick
 src/lib/einkauf.ts      Einkaufsliste: Umrechnen, Zusammenzählen, Runden, Sortieren
 src/lib/speicher.ts     Laden, Speichern, Sicherung
+src/lib/abgleich.ts     Änderungen ↔ Datenbankzeilen (rein, getestet)
+src/lib/warteschlange.ts Änderungen, die noch nicht beim Server sind
+src/lib/useGemeinsam.ts Anmeldung, Haushalt, Realtime, Nachschicken
+supabase/               Migration und Prüfung der Zugriffsrechte
 src/seiten/             Woche, Einkauf, Rezepte, Einstellungen
 tests/                  Vitest
 ```
 
 ## Nächste Stufen
 
-1. Gemeinsamer Stand für beide Handys (Konto je Person, ein Haushalt).
-2. Bewertung nach dem Essen (auch vom Kind), Favoriten öfter, Flops seltener.
-3. Wünsche wischen: jeder sagt vor der Planung, worauf er Lust hat; Kinderansicht mit Bildern.
-4. Grobe Kosten je Woche, Vorkochplan für Sonntag, Mittwochs-Nachkauf (Brot, Milch).
+1. Bewertung nach dem Essen (auch vom Kind), Favoriten öfter, Flops seltener.
+2. Wünsche wischen: jeder sagt vor der Planung, worauf er Lust hat; Kinderansicht mit Bildern.
+3. Grobe Kosten je Woche, Vorkochplan für Sonntag, Mittwochs-Nachkauf (Brot, Milch).

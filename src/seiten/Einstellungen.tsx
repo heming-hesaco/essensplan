@@ -3,13 +3,16 @@ import type { SeitenProps } from '../App'
 import { pruefe, startzustand } from '../lib/speicher'
 import { EINHEITEN, FELDER, LAEDEN, WOCHENTAGE, type Einheit, type Feld, type Laden } from '../lib/typen'
 import { heuteIso } from '../lib/woche'
+import type { Gemeinsam } from '../lib/useGemeinsam'
 import type { Katalog } from '../lib/zutaten'
+import { GemeinsamBereich } from './Gemeinsam'
 
 interface Props extends SeitenProps {
   katalog: Katalog
+  gemeinsam: Gemeinsam
 }
 
-export function Einstellungen({ z, aendere, katalog }: Props) {
+export function Einstellungen({ z, aendere, katalog, gemeinsam }: Props) {
   const datei = useRef<HTMLInputElement>(null)
   const [meldung, setMeldung] = useState('')
   const [zutatSuche, setZutatSuche] = useState('')
@@ -50,6 +53,8 @@ export function Einstellungen({ z, aendere, katalog }: Props) {
   return (
     <>
       <header className="kopf"><h1>Einstellungen</h1></header>
+
+      <GemeinsamBereich g={gemeinsam} />
 
       <section className="karte formular">
         <h2>Haushalt</h2>
@@ -108,8 +113,9 @@ export function Einstellungen({ z, aendere, katalog }: Props) {
       <section className="karte formular">
         <h2>Daten</h2>
         <p className="klein">
-          Alles liegt nur in diesem Browser. Mit einer Sicherung übertragt ihr den Stand auf das
-          zweite Handy oder schützt ihn vor dem Löschen der Browserdaten.
+          {gemeinsam.haushalt
+            ? 'Eine Sicherung ist eine Kopie des gemeinsamen Stands. Einlesen und Zurücksetzen gelten für den ganzen Haushalt.'
+            : 'Alles liegt nur in diesem Browser. Mit einer Sicherung übertragt ihr den Stand auf ein anderes Gerät oder schützt ihn vor dem Löschen der Browserdaten.'}
         </p>
         <div className="aktionen">
           <button onClick={sichern}>Sicherung herunterladen</button>

@@ -180,3 +180,11 @@ legend { font-weight: 600; padding: 0 4px; }
 .zutaten { list-style: none; padding: 0; margin: 0 0 12px; }
 .zutaten li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--linie); }
 .anleitung { white-space: pre-wrap; margin: 0; }
+
+.code-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.code-zeile .klein { flex-basis: 100%; }
+.code { font: 600 1.3rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.12em; background: var(--grund); padding: 10px 12px; border-radius: 10px; }
+.punkt { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--gedaempft); vertical-align: middle; }
+.punkt.verbunden { background: var(--akzent); }
+.punkt.offline { background: var(--saison); }
+button:disabled { opacity: 0.5; cursor: default; }

@@ -15,3 +15,23 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  datenbank:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: public.ecr.aws/supabase/postgres:17.6.1.010
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrationen
+        run: for f in supabase/migrations/*.sql; do psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$f"; done
+      - name: Zugriffsrechte
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f supabase/tests/haushalt.sql | tee ausgabe.txt && grep -q "ALLE PRÜFUNGEN BESTANDEN" ausgabe.txt
