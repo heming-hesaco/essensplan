@@ -27,6 +27,8 @@ export interface Zustand {
   extras: Record<string, ExtraPosten[]>
   /** Bewertungen je Rezept und Person. */
   bewertungen: Record<string, Record<string, Bewertung>>
+  /** Wünsche des Kindes: Rezept → seit wann. */
+  wuensche: Record<string, string>
 }
 
 export const START_PERSONEN = [
@@ -48,6 +50,7 @@ export function startzustand(): Zustand {
     vorratLeer: {},
     extras: {},
     bewertungen: {},
+    wuensche: {},
   }
 }
 
@@ -95,6 +98,7 @@ export function pruefe(daten: unknown): Zustand {
     vorratLeer: d.vorratLeer ?? {},
     extras: d.extras ?? {},
     bewertungen: d.bewertungen ?? {},
+    wuensche: d.wuensche ?? {},
   }
 }
 

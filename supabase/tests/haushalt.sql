@@ -46,6 +46,9 @@ reset role;
 select pg_temp.als('22222222-2222-2222-2222-222222222222');
 insert into public.bewertungen (haushalt_id, rezept_id, person, wert, datum)
   select id, 'lasagne', 'p3', 3, '2026-10-18' from t_ids;
+insert into public.wuensche (haushalt_id, rezept_id, an, seit)
+  select id, 'pfannkuchen', true, '2026-10-18' from t_ids;
+select pg_temp.pruefe((select count(*) from public.wuensche where an) = 1, 'Ben sieht den Wunsch');
 insert into storage.objects (bucket_id, name, owner)
   select 'fotos', id || '/lasagne-1.jpg', '22222222-2222-2222-2222-222222222222' from t_ids;
 select pg_temp.pruefe((select count(*) from storage.objects where bucket_id = 'fotos') = 1, 'Ben sieht das Foto des Haushalts');
@@ -68,6 +71,12 @@ select pg_temp.pruefe((select count(*) from public.rezepte) = 0, 'Fremder liest 
 select pg_temp.pruefe((select count(*) from public.haken) = 0, 'Fremder liest keine Haken');
 select pg_temp.pruefe((select count(*) from public.mitglieder) = 0, 'Fremder liest keine Mitglieder');
 select pg_temp.pruefe((select count(*) from public.bewertungen) = 0, 'Fremder liest keine Bewertungen');
+select pg_temp.pruefe((select count(*) from public.wuensche) = 0, 'Fremder liest keine Wünsche');
+do $$ begin
+  insert into public.wuensche (haushalt_id, rezept_id, an, seit) select id, 'boese', true, '2026-10-18' from t_ids;
+  raise exception 'FEHLGESCHLAGEN: Fremder wünscht im fremden Haushalt';
+exception when insufficient_privilege then raise notice 'ok: Fremder wünscht nichts im fremden Haushalt';
+end $$;
 select pg_temp.pruefe((select count(*) from storage.objects where bucket_id = 'fotos') = 0, 'Fremder sieht keine Fotos');
 do $$ begin
   insert into storage.objects (bucket_id, name) select 'fotos', id || '/fremd.jpg' from t_ids;
@@ -136,6 +145,7 @@ reset role;
 select pg_temp.pruefe((select count(*) from public.haushalte) = 0, 'letzter geht: Haushalt gelöscht');
 select pg_temp.pruefe((select count(*) from public.rezepte) = 0, 'mit ihm die Rezepte');
 select pg_temp.pruefe((select count(*) from public.bewertungen) = 0, 'und die Bewertungen');
+select pg_temp.pruefe((select count(*) from public.wuensche) = 0, 'und die Wünsche');
 
 select 'ALLE PRÜFUNGEN BESTANDEN';
 rollback;

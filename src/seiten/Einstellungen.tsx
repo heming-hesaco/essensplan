@@ -4,7 +4,7 @@ import { pruefe, startzustand } from '../lib/speicher'
 import { EINHEITEN, FELDER, LAEDEN, WOCHENTAGE, type Einheit, type Feld, type Laden } from '../lib/typen'
 import { heuteIso } from '../lib/woche'
 import type { Gemeinsam } from '../lib/useGemeinsam'
-import type { Katalog } from '../lib/zutaten'
+import { zutatSchluessel, type Katalog } from '../lib/zutaten'
 import { GemeinsamBereich } from './Gemeinsam'
 
 interface Props extends SeitenProps {
@@ -28,6 +28,29 @@ export function Einstellungen({ z, aendere, katalog, gemeinsam }: Props) {
     const info = zutaten.find((i) => i.name === name)
     if (!info) return
     aendere((alt) => ({ ...alt, katalog: [...alt.katalog.filter((k) => k.name !== name), { ...info, laden }] }))
+  }
+
+  /** In welchen Einheiten eine Zutat in Rezepten und Frühstück vorkommt – dafür braucht sie einen Preis. */
+  const einheiten = useMemo(() => {
+    const m = new Map<string, Set<Einheit>>()
+    for (const zt of [...z.rezepte.flatMap((r) => r.zutaten), ...z.fruehstueck]) {
+      const key = zutatSchluessel(zt.name)
+      if (!m.has(key)) m.set(key, new Set())
+      m.get(key)!.add(zt.einheit)
+    }
+    return m
+  }, [z.rezepte, z.fruehstueck])
+
+  const setzePreis = (name: string, einheit: Einheit, text: string) => {
+    const info = zutaten.find((i) => i.name === name)
+    if (!info) return
+    const wert = Number(text.replace(',', '.'))
+    const preis = { ...info.preis }
+    if (text.trim() === '' || !(wert >= 0)) delete preis[einheit]
+    else preis[einheit] = Math.round(wert * 100) / 100
+    // Nur Hineinklicken und wieder Hinaus ändert nichts und soll auch nichts abgleichen.
+    if (preis[einheit] === info.preis?.[einheit]) return
+    aendere((alt) => ({ ...alt, katalog: [...alt.katalog.filter((k) => k.name !== name), { ...info, preis }] }))
   }
 
   const sichern = () => {
@@ -115,15 +138,37 @@ export function Einstellungen({ z, aendere, katalog, gemeinsam }: Props) {
       </section>
 
       <details className="karte formular">
-        <summary><strong>Wo wird was gekauft?</strong></summary>
+        <summary><strong>Wo wird was gekauft – und was kostet es?</strong></summary>
+        <p className="klein">
+          Die Preise sind grobe Schätzungen und ergeben die Kosten der Woche. Tragt ein, was ihr
+          wirklich zahlt; ein leeres Feld nimmt den Startwert.
+        </p>
         <input type="search" placeholder="Zutat suchen" value={zutatSuche} onChange={(e) => setZutatSuche(e.target.value)} aria-label="Zutat suchen" />
-        {zutaten.map((i) => (
-          <label key={i.name} className="zeile-label">{i.name}
-            <select value={i.laden} onChange={(e) => setzeLaden(i.name, e.target.value as Laden)}>
-              {LAEDEN.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-            </select>
-          </label>
-        ))}
+        {zutaten.map((i) => {
+          const genutzt = [...new Set<Einheit>([...(einheiten.get(zutatSchluessel(i.name)) ?? []), ...(Object.keys(i.preis ?? {}) as Einheit[])])]
+          return (
+            <div key={i.name} className="preis-zeile">
+              <label className="zeile-label">{i.name}
+                <select value={i.laden} onChange={(e) => setzeLaden(i.name, e.target.value as Laden)}>
+                  {LAEDEN.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+              </label>
+              {genutzt.filter((e) => e !== 'EL' && e !== 'TL' && e !== 'Prise').map((e) => (
+                <label key={e} className="zeile-label preis">
+                  <span className="klein">€ je {e === 'g' ? 'kg' : e === 'ml' ? 'Liter' : e}</span>
+                  <input
+                    key={`${i.name}-${e}-${i.preis?.[e] ?? ''}`}
+                    inputMode="decimal"
+                    defaultValue={i.preis?.[e] !== undefined ? i.preis[e]!.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
+                    placeholder="—"
+                    aria-label={`Preis ${i.name} je ${e === 'g' ? 'kg' : e === 'ml' ? 'Liter' : e}`}
+                    onBlur={(ev) => setzePreis(i.name, e, ev.target.value)}
+                  />
+                </label>
+              ))}
+            </div>
+          )
+        })}
       </details>
 
       <section className="karte formular">

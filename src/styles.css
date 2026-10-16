@@ -63,7 +63,7 @@ h3 { font-size: 0.8rem; margin: 0.9rem 0 0.2rem; color: var(--gedaempft); text-t
   position: fixed;
   inset: auto 0 0 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   background: var(--karte);
   border-top: 1px solid var(--linie);
   padding-bottom: env(safe-area-inset-bottom);
@@ -228,3 +228,50 @@ button:disabled { opacity: 0.5; cursor: default; }
 .wie-wars { width: 100%; margin: 4px 0 2px; border-style: dashed; color: var(--akzent); font-weight: 600; }
 .foto-knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; }
 .knopf { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--linie); background: var(--karte); cursor: pointer; }
+
+/* Wünsche und Kosten */
+.marke.wunsch { background: #fff1c2; color: #6b4a00; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .marke.wunsch { background: #3d3216; color: #f5d27a; } }
+:root[data-theme='dark'] .marke.wunsch { background: #3d3216; color: #f5d27a; }
+.kosten-zeile { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.kosten-zeile strong { font-size: 1.15rem; }
+.laden-summe { font-weight: 400; }
+.preis-zeile { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-bottom: 1px solid var(--linie); }
+.preis-zeile:last-child { border-bottom: 0; }
+.zeile-label.preis input { max-width: 40%; text-align: right; }
+.leiste button { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem; padding-left: 0; padding-right: 0; }
+
+/* Kinderansicht: große Bilder, große Knöpfe, wenig Text */
+.kind { display: flex; flex-direction: column; gap: 12px; }
+.kind-kopf h1 { font-size: 1.9rem; }
+.kind h2 { font-size: 1.3rem; }
+.kind-heute { text-align: center; }
+.kind-heute-bild { height: 200px; border-radius: 12px; }
+.kind-heute-bild.ersatz span { font-size: 4.5rem; }
+.kind-gericht { font-size: 1.5rem; font-weight: 700; margin: 10px 0 4px; }
+.kind-frage { font-size: 1.15rem; margin: 10px 0 6px; }
+.kind-gesichter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.kind-gesicht { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 84px; font-size: 0.95rem; font-weight: 600; border-radius: 16px; }
+.kind-gesicht span { font-size: 2.4rem; line-height: 1.1; }
+.kind-gesicht[aria-pressed='true'] { background: var(--akzent-hell); border: 3px solid var(--akzent); }
+.kind-woche { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.kind-woche li { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 4px 2px; border-radius: 10px; }
+.kind-woche li.heute { background: var(--akzent-hell); outline: 2px solid var(--akzent); }
+.kind-woche li.vorbei { opacity: 0.55; }
+.kind-tag { font-weight: 700; font-size: 0.85rem; }
+.kind-mini { width: 100%; aspect-ratio: 1; border-radius: 8px; }
+.kind-mini.ersatz span { font-size: 1.3rem; }
+.kind-mini-name { font-size: 0.62rem; line-height: 1.15; text-align: center; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; hyphens: auto; }
+.kat-leer { background: var(--grund); }
+.kind-sterne { font-size: 1.05rem; margin: 0 0 8px; }
+.kind-sterne span { font-size: 1.4rem; letter-spacing: 2px; }
+.kind-raster { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.kind-kachel { position: relative; width: 100%; height: 100%; padding: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; border: 3px solid var(--linie); text-align: center; }
+.kind-kachel.gewuenscht, .kind-kachel[aria-pressed='true'] { border-color: #e0a800; background: #fff8de; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .kind-kachel.gewuenscht { background: #2e2814; } }
+:root[data-theme='dark'] .kind-kachel.gewuenscht { background: #2e2814; }
+.kind-kachel-bild { height: 120px; }
+.kind-kachel-bild.ersatz span { font-size: 3rem; }
+.kind-kachel-name { padding: 8px 6px 10px; font-weight: 700; font-size: 1rem; line-height: 1.25; }
+.kind-stern { position: absolute; top: 6px; right: 6px; font-size: 2rem; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+.kind-kommt { margin: -4px 6px 10px; font-size: 0.9rem; font-weight: 700; color: var(--akzent); }

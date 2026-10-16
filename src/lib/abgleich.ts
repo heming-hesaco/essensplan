@@ -14,6 +14,7 @@ export type Vorgang =
   | { tabelle: 'haken'; woche: string; art: 'abgehakt' | 'vorrat_leer'; schluessel: string; an: boolean }
   | { tabelle: 'extras'; woche: string; id: string; text: string; laden: Laden; geloescht: boolean }
   | { tabelle: 'bewertungen'; rezeptId: string; person: string; wert: Wert | null; datum: string }
+  | { tabelle: 'wuensche'; rezeptId: string; an: boolean; seit: string }
 
 /** Zwei Vorgänge mit demselben Schlüssel betreffen dieselbe Zeile; der spätere gewinnt. */
 export function zeilenSchluessel(v: Vorgang): string {
@@ -24,6 +25,7 @@ export function zeilenSchluessel(v: Vorgang): string {
     case 'haken': return `haken:${v.woche}:${v.art}:${v.schluessel}`
     case 'extras': return `extras:${v.id}`
     case 'bewertungen': return `bewertungen:${v.rezeptId}:${v.person}`
+    case 'wuensche': return `wuensche:${v.rezeptId}`
   }
 }
 
@@ -86,6 +88,13 @@ export function aenderungen(alt: Zustand, neu: Zustand): Vorgang[] {
     }
   }
 
+  for (const [rezeptId, seit] of Object.entries(neu.wuensche)) {
+    if (alt.wuensche[rezeptId] !== seit) v.push({ tabelle: 'wuensche', rezeptId, an: true, seit })
+  }
+  for (const [rezeptId, seit] of Object.entries(alt.wuensche)) {
+    if (!(rezeptId in neu.wuensche)) v.push({ tabelle: 'wuensche', rezeptId, an: false, seit })
+  }
+
   return v
 }
 
@@ -119,6 +128,12 @@ export function wendeAn(z: Zustand, v: Vorgang): Zustand {
     }
     case 'bewertungen':
       return { ...z, bewertungen: bewerte(z.bewertungen, v.rezeptId, v.person, v.wert, v.datum) }
+    case 'wuensche': {
+      const wuensche = { ...z.wuensche }
+      if (v.an) wuensche[v.rezeptId] = v.seit
+      else delete wuensche[v.rezeptId]
+      return { ...z, wuensche }
+    }
   }
 }
 
@@ -136,6 +151,7 @@ export interface Zeilen {
   haken: { woche: string; art: 'abgehakt' | 'vorrat_leer'; schluessel: string; an: boolean }[]
   extras: { id: string; woche: string; text: string; laden: Laden; geloescht: boolean }[]
   bewertungen: { rezept_id: string; person: string; wert: Wert | null; datum: string }[]
+  wuensche?: { rezept_id: string; an: boolean; seit: string }[]
 }
 
 /** Der ganze Stand eines Haushalts aus den Zeilen der Datenbank. */
@@ -155,6 +171,9 @@ export function ausZeilen(zeilen: Zeilen): Zustand {
   for (const e of zeilen.extras) if (!e.geloescht) z = wendeAn(z, { tabelle: 'extras', ...e })
   for (const b of zeilen.bewertungen ?? []) {
     if (b.wert !== null) z = wendeAn(z, { tabelle: 'bewertungen', rezeptId: b.rezept_id, person: b.person, wert: b.wert, datum: b.datum })
+  }
+  for (const w of zeilen.wuensche ?? []) {
+    if (w.an) z = wendeAn(z, { tabelle: 'wuensche', rezeptId: w.rezept_id, an: true, seit: w.seit })
   }
   return z
 }
@@ -178,6 +197,8 @@ export function zeileZuVorgang(tabelle: string, z: Record<string, unknown>): Vor
       return { tabelle, woche: z.woche as string, id: z.id as string, text: z.text as string, laden: z.laden as Laden, geloescht: z.geloescht as boolean }
     case 'bewertungen':
       return { tabelle, rezeptId: z.rezept_id as string, person: z.person as string, wert: (z.wert as Wert | null) ?? null, datum: z.datum as string }
+    case 'wuensche':
+      return { tabelle, rezeptId: z.rezept_id as string, an: z.an as boolean, seit: z.seit as string }
     default:
       return null
   }
@@ -211,6 +232,11 @@ export function vorgangZuZeile(v: Vorgang, haushaltId: string): { tabelle: Vorga
       return {
         tabelle: 'bewertungen', konflikt: 'haushalt_id,rezept_id,person',
         zeile: { haushalt_id: haushaltId, rezept_id: v.rezeptId, person: v.person, wert: v.wert, datum: v.datum },
+      }
+    case 'wuensche':
+      return {
+        tabelle: 'wuensche', konflikt: 'haushalt_id,rezept_id',
+        zeile: { haushalt_id: haushaltId, rezept_id: v.rezeptId, an: v.an, seit: v.seit },
       }
   }
 }

@@ -15,6 +15,8 @@ export interface PlanKontext {
   zufall: () => number
   /** Eure Bewertungen: Lieblinge kommen öfter, „nicht nochmal“ fast nie. */
   bewertungen?: Bewertungen
+  /** Gerichte, die sich das Kind wünscht: Sie kommen bevorzugt, am Kinderwunsch-Tag zuerst. */
+  wuensche?: Set<string>
 }
 
 const FISCH = /fisch|lachs|thunfisch|seelachs/i
@@ -73,6 +75,8 @@ export function passtInsFeld(rezept: Rezept, feld: Feld): boolean {
  *   dann gleichauf, und das Haltbare käme zuerst dran.
  * - In den letzten zwei Wochen gegessen: −6.
  * - Bewertungen: je „lecker“ +0,8, je „nicht nochmal“ −8.
+ * - Wunsch des Kindes: +4 – genug, um sich an seinem Kategorietag durchzusetzen, aber
+ *   nicht gegen ein „nicht nochmal“ der anderen.
  * - Zufall bis +2, damit die Woche nicht jedes Mal gleich aussieht.
  */
 export function bewerte(rezept: Rezept, tagIndex: number, gewaehlt: Rezept[], ctx: PlanKontext): number {
@@ -84,6 +88,7 @@ export function bewerte(rezept: Rezept, tagIndex: number, gewaehlt: Rezept[], ct
   if (m.empfindlich) punkte += 0.6 * (3 - tagIndex)
   if (ctx.kuerzlich.has(rezept.id)) punkte -= 6
   if (ctx.bewertungen) punkte += bewertungsPunkte(rezept.id, ctx.bewertungen)
+  if (ctx.wuensche?.has(rezept.id)) punkte += 4
   punkte += ctx.zufall() * 2
   return punkte
 }
@@ -99,6 +104,11 @@ function besteWahl(
   let kandidaten = frei.filter((r) => passtInsFeld(r, feld))
   // Gibt es für ein Feld nichts mehr, lieber irgendein Gericht als ein leerer Tag.
   if (kandidaten.length === 0) kandidaten = frei
+  // Am Kinderwunsch-Tag zählt erst der Wunsch, dann alles andere.
+  if (feld === 'kinderwunsch' && ctx.wuensche) {
+    const gewuenscht = frei.filter((r) => ctx.wuensche!.has(r.id))
+    if (gewuenscht.length > 0) kandidaten = gewuenscht
+  }
   let beste: Rezept | null = null
   let bestePunkte = -Infinity
   for (const r of kandidaten) {

@@ -48,6 +48,11 @@ export interface ZutatInfo {
   vorrat?: boolean
   /** Symbol für Listen; fehlt es, steht das der Abteilung da. */
   bild?: string
+  /**
+   * Grober Preis in Euro je Einheit, so wie die Zutat in Rezepten vorkommt: bei g je
+   * Kilogramm, bei ml je Liter, sonst je Stück, Dose, Bund … Ein Schätzwert, kein Kassenbon.
+   */
+  preis?: Partial<Record<Einheit, number>>
 }
 
 export type Einheit =

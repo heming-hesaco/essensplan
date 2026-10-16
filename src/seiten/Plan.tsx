@@ -4,6 +4,8 @@ import { merkmale, schlageWocheVor, tauscheTag, ueberblick, zufallAus, type Plan
 import { FELDER, KATEGORIEN, WOCHENTAGE, type Kategorie, type Plan, type Tag } from '../lib/typen'
 import { heuteIso, kurzDatum, monatVon, plusTage } from '../lib/woche'
 import type { Katalog } from '../lib/zutaten'
+import { gerichtKosten, wochenKosten, zeigeEuro } from '../lib/kosten'
+import { aktuelleWuensche, kindAus } from '../lib/wuensche'
 import { Bewertungsleiste, BewertungKurz, GerichtBild } from './Bausteine'
 import { WochenKopf } from './WochenKopf'
 
@@ -17,6 +19,11 @@ interface Props extends SeitenProps {
 export function PlanSeite({ z, aendere, katalog, woche, setWoche, zumEinkauf }: Props) {
   const plan = z.plaene[woche]
   const monat = monatVon(woche)
+  const heute = heuteIso()
+  const wuensche = useMemo(() => aktuelleWuensche(z.wuensche, z.plaene, heute), [z.wuensche, z.plaene, heute])
+  const kind = kindAus(z.einstellungen.personen)
+  const offeneWuensche = [...wuensche].filter(([, s]) => s.art === 'offen')
+    .map(([id]) => z.rezepte.find((r) => r.id === id)?.name).filter((n): n is string => !!n)
 
   const kontext = (): PlanKontext => ({
     rezepte: z.rezepte,
@@ -30,6 +37,7 @@ export function PlanSeite({ z, aendere, katalog, woche, setWoche, zumEinkauf }: 
     ),
     zufall: zufallAus(Date.now()),
     bewertungen: z.bewertungen,
+    wuensche: new Set(wuensche.keys()),
   })
 
   const setzePlan = (p: Plan) => aendere((alt) => ({ ...alt, plaene: { ...alt.plaene, [woche]: p } }))
@@ -41,10 +49,20 @@ export function PlanSeite({ z, aendere, katalog, woche, setWoche, zumEinkauf }: 
   }
 
   const u = useMemo(() => (plan ? ueberblick(plan, z.rezepte, katalog, monat) : null), [plan, z.rezepte, katalog, monat])
+  const k = useMemo(
+    () => (plan ? wochenKosten(plan, z.rezepte, katalog, z.einstellungen, z.fruehstueck) : null),
+    [plan, z.rezepte, katalog, z.einstellungen, z.fruehstueck],
+  )
 
   return (
     <>
       <WochenKopf titel="Wochenplan" woche={woche} setWoche={setWoche} />
+
+      {offeneWuensche.length > 0 && (
+        <p className="hinweis wunsch-hinweis">
+          ⭐ {kind?.name ?? 'Das Kind'} wünscht sich: {offeneWuensche.join(', ')}. Beim nächsten Vorschlag kommen die Wünsche zuerst.
+        </p>
+      )}
 
       {!plan ? (
         <section className="karte leerzustand">
@@ -92,7 +110,15 @@ export function PlanSeite({ z, aendere, katalog, woche, setWoche, zumEinkauf }: 
                 <li><strong>{u.fisch}</strong> mit Fisch</li>
                 <li><strong>{u.fleisch}</strong> mit Fleisch</li>
                 {u.saisonAnteil !== null && <li><strong>{Math.round(u.saisonAnteil * 100)} %</strong> Saisonware</li>}
+                {k && <li><strong>{zeigeEuro(k.gesamt.euro).replace('ca. ', '')}</strong> Lebensmittel, grob</li>}
               </ul>
+              {k && k.abende > 0 && (
+                <p className="klein">
+                  Abendessen {zeigeEuro(k.abendessen)}, im Schnitt {zeigeEuro(k.abendessen / k.abende)} pro Abend für alle,
+                  Reste fürs Mittagessen eingerechnet. Der Rest ist Frühstück. Geschätzte Preise, ohne Grundvorrat.
+                  {k.gesamt.ohnePreis.length > 0 && ` Ohne Preis und deshalb nicht dabei: ${k.gesamt.ohnePreis.join(', ')}.`}
+                </p>
+              )}
               {u.fisch === 0 && <p className="hinweis">Diese Woche ist kein Fisch dabei – empfohlen sind ein- bis zweimal pro Woche.</p>}
               {u.fleisch > 3 && <p className="hinweis">Mehr als dreimal Fleisch – ein Tag mit Hülsenfrüchten wäre günstiger und ausgewogener.</p>}
               {u.gemeinsam.length > 0 && (
@@ -128,6 +154,10 @@ function TagKarte({ index, tag, datum, z, aendere, katalog, monat, setze, tausch
   const gegessen = datum <= heute
   const bewertet = rezept ? Object.keys(z.bewertungen[rezept.id] ?? {}).length > 0 : false
   const [bewerten, setBewerten] = useState(false)
+  const kosten = rezept ? gerichtKosten(rezept, katalog, z.einstellungen, tag.typ === 'rezept' && tag.mitResten) : null
+  const seit = rezept ? z.wuensche[rezept.id] : undefined
+  const gewuenscht = seit !== undefined && seit <= datum
+  const kind = kindAus(z.einstellungen.personen)
 
   const waehle = (id: string) => {
     if (id === '__reste') setze({ typ: 'restetag' })
@@ -153,7 +183,9 @@ function TagKarte({ index, tag, datum, z, aendere, katalog, monat, setze, tausch
               {m && m.saisonAnteil !== null && m.saisonAnteil >= 0.75 && <span className="marke saison">Saison</span>}
               {m?.fisch && <span className="marke">Fisch</span>}
               {m?.fleisch && !m.fisch && <span className="marke">Fleisch</span>}
-              {rezept.kinderfreundlich && <span className="marke">Kind mag’s</span>}
+              {gewuenscht && <span className="marke wunsch">⭐ Wunsch von {kind?.name ?? 'Kind'}</span>}
+              {!gewuenscht && rezept.kinderfreundlich && <span className="marke">Kind mag’s</span>}
+              {kosten && kosten.euro > 0 && <span>{zeigeEuro(kosten.euro)}</span>}
               <BewertungKurz rezeptId={rezept.id} z={z} />
             </p>
           )}

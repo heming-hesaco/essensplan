@@ -5,15 +5,18 @@ import { heuteIso, letzterSamstag, naechsterSamstag } from './lib/woche'
 import { baueKatalog } from './lib/zutaten'
 import { Einkauf } from './seiten/Einkauf'
 import { Einstellungen } from './seiten/Einstellungen'
+import { KindSeite } from './seiten/Kind'
+import { kindAus } from './lib/wuensche'
 import { PlanSeite } from './seiten/Plan'
 import { Rezepte } from './seiten/Rezepte'
 
-type Bereich = 'plan' | 'einkauf' | 'rezepte' | 'einstellungen'
+type Bereich = 'plan' | 'einkauf' | 'rezepte' | 'kind' | 'einstellungen'
 
 const BEREICHE: { id: Bereich; name: string; zeichen: string }[] = [
   { id: 'plan', name: 'Woche', zeichen: '🗓️' },
   { id: 'einkauf', name: 'Einkauf', zeichen: '🧺' },
   { id: 'rezepte', name: 'Rezepte', zeichen: '📖' },
+  { id: 'kind', name: 'Kind', zeichen: '🧒' },
   { id: 'einstellungen', name: 'Einstellungen', zeichen: '⚙️' },
 ]
 
@@ -35,6 +38,8 @@ export function App() {
   const [woche, setWoche] = useState(() => startWoche(z))
   const [speicherOk, setSpeicherOk] = useState(true)
   const katalog = useMemo(() => baueKatalog(z.katalog), [z.katalog])
+  // Der Reiter trägt den Namen des Kindes, sobald er in den Einstellungen steht.
+  const kindName = kindAus(z.einstellungen.personen)?.name.trim() || 'Kind'
 
   useEffect(() => {
     setSpeicherOk(speichere(z))
@@ -75,13 +80,17 @@ export function App() {
         {bereich === 'plan' && (
           <PlanSeite
             z={z} aendere={aendere} katalog={katalog} woche={woche} setWoche={setWoche}
-            zumEinkauf={() => setBereich('einkauf')}
+            zumEinkauf={() => {
+              setBereich('einkauf')
+              window.scrollTo(0, 0)
+            }}
           />
         )}
         {bereich === 'einkauf' && (
           <Einkauf z={z} aendere={aendere} katalog={katalog} woche={woche} setWoche={setWoche} />
         )}
         {bereich === 'rezepte' && <Rezepte z={z} aendere={aendere} katalog={katalog} haushaltId={gemeinsam.haushalt?.id ?? null} />}
+        {bereich === 'kind' && <KindSeite z={z} aendere={aendere} />}
         {bereich === 'einstellungen' && <Einstellungen z={z} aendere={aendere} katalog={katalog} gemeinsam={gemeinsam} />}
       </main>
       <nav className="leiste" aria-label="Bereiche">
@@ -90,10 +99,13 @@ export function App() {
             key={b.id}
             className={bereich === b.id ? 'aktiv' : ''}
             aria-current={bereich === b.id ? 'page' : undefined}
-            onClick={() => setBereich(b.id)}
+            onClick={() => {
+              setBereich(b.id)
+              window.scrollTo(0, 0)
+            }}
           >
             <span aria-hidden="true">{b.zeichen}</span>
-            {b.name}
+            {b.id === 'kind' ? kindName : b.name}
           </button>
         ))}
       </nav>

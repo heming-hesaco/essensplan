@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { SeitenProps } from '../App'
 import { istLiebling } from '../lib/bewertung'
 import { ladeFotoHoch, verkleinere } from '../lib/foto'
+import { gerichtKosten, zeigeEuro } from '../lib/kosten'
 import { merkmale } from '../lib/planer'
 import { STARTREZEPTE } from '../lib/startrezepte'
 import { supabase } from '../lib/supabase'
@@ -71,6 +72,7 @@ export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
             <span className="marke">{KATEGORIEN[r.kategorie]}</span>
             <span>{r.minuten} Min.</span>
             {r.kinderfreundlich && <span className="marke">Kind mag’s</span>}
+            <KostenMarke rezept={r} katalog={katalog} z={z} />
           </p>
           <FotoKnoepfe
             rezept={r}
@@ -309,5 +311,16 @@ function FotoKnoepfe({ rezept, haushaltId, status, setStatus, setzeFoto }: FotoP
       )}
       {status && <p className="klein" role="status">{status}</p>}
     </div>
+  )
+}
+
+/** Was ein Abendessen für den Haushalt grob kostet; ohne Preise für alle Zutaten ein Hinweis. */
+function KostenMarke({ rezept, katalog, z }: { rezept: Rezept; katalog: Katalog; z: SeitenProps['z'] }) {
+  const k = gerichtKosten(rezept, katalog, z.einstellungen)
+  if (k.euro === 0) return null
+  return (
+    <span title={k.ohnePreis.length ? `Ohne Preis: ${k.ohnePreis.join(', ')}` : 'Grobe Schätzung, ohne Grundvorrat'}>
+      {zeigeEuro(k.euro)} für euch{k.ohnePreis.length > 0 ? ' +' : ''}
+    </span>
   )
 }

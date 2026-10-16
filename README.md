@@ -54,6 +54,28 @@ mehr, als ein Gericht sonst sammeln kann. Ein abgelehntes Gericht kommt also nur
 den Tag nichts anderes passt. Unter Rezepte filtert „Lieblinge“ auf Gerichte, die mindestens
 zwei lecker finden und keiner ablehnt.
 
+**Kinderansicht.** Der Reiter mit dem Namen des Kindes (unter Einstellungen → „Wer
+bewertet?“, Person 3) zeigt groß, was es heute gibt, die Woche als Bilderleiste und alle
+Gerichte, die als „Isst das Kind gern“ markiert sind. Was das Kind mit „Mag ich nicht“
+bewertet hat, fällt dort weg. Das Kind darf sich **drei Gerichte wünschen**. Ein Wunsch
+kommt im nächsten Wochenvorschlag zuerst an den Kinderwunsch-Tag und sonst mit +4 Punkten
+an seinen Kategorietag. Gegen ein „nicht nochmal“ der anderen kommt er nicht an. Ob ein
+Wunsch erfüllt ist, liest die App aus den Plänen ab: Steht das Gericht ab dem Wunsch im
+Plan, heißt es „Gibt’s am Freitag! 🎉“; ist der Tag vorbei, wird der Platz für einen neuen
+Wunsch frei. Im Wochenplan stehen offene Wünsche oben, gewünschte Gerichte tragen „⭐
+Wunsch von …“. In der Kinderansicht heißen die „Nudeln mit versteckter Gemüsesauce“ nur
+„Nudeln mit Gemüsesauce“.
+
+**Grobe Kosten.** Jede Zutat hat einen geschätzten Preis (Discounter-Niveau, auf dem Markt
+etwas darüber; bei g je Kilogramm, bei ml je Liter, sonst je Stück, Dose, Bund).
+Gerechnet wird mit dem, was verbraucht wird: Eine angebrochene Packung zählt anteilig.
+Grundvorrat und eigene Posten zählen nicht mit. Die Summe steht auf der Einkaufsliste
+(gesamt und je Laden), in „Die Woche im Blick“ (dazu Abendessen und Schnitt je Abend), an
+jedem Tag und in der Rezeptansicht. Unter Einstellungen → „Wo wird was gekauft – und was
+kostet es?“ lassen sich die Preise durch die eigenen ersetzen; ein leeres Feld nimmt den
+Startwert. Mit den Startpreisen kostet eine Woche für drei etwa 75 bis 85 €, ein
+Abendessen zwischen 2 und 7,60 €.
+
 ## Gemeinsamer Stand auf beiden Handys
 
 Unter **Einstellungen → Gemeinsam nutzen** legt jeder ein Konto an (E-Mail und Passwort).
@@ -139,12 +161,13 @@ src/lib/useGemeinsam.ts Anmeldung, Haushalt, Realtime, Nachschicken
 src/lib/bewertung.ts    Bewertungen und ihr Gewicht im Vorschlag
 src/lib/foto.ts         Eigene Fotos: verkleinern, hochladen, signierte Links
 src/lib/startfotos.ts   Fotos der Startgerichte mit Urheber und Lizenz
+src/lib/kosten.ts       Grobe Kosten je Gericht, Woche und Laden
+src/lib/wuensche.ts     Wünsche des Kindes: offen, eingeplant, erfüllt
 supabase/               Migration und Prüfung der Zugriffsrechte
-src/seiten/             Woche, Einkauf, Rezepte, Einstellungen
+src/seiten/             Woche, Einkauf, Rezepte, Kind, Einstellungen
 tests/                  Vitest
 ```
 
 ## Nächste Stufen
 
-1. Wünsche wischen: jeder sagt vor der Planung, worauf er Lust hat; Kinderansicht mit Bildern.
-2. Grobe Kosten je Woche, Vorkochplan für Sonntag, Mittwochs-Nachkauf (Brot, Milch).
+1. Vorkochplan für Sonntag, Mittwochs-Nachkauf (Brot, Milch).

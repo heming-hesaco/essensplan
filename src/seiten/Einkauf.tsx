@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { SeitenProps } from '../App'
 import { erstelleListe, nachLaden, zeigeMenge, type Posten } from '../lib/einkauf'
+import { postenPreis, zeigeEuro } from '../lib/kosten'
 import { neueId } from '../lib/speicher'
 import { ABTEILUNGEN, LAEDEN, type Laden } from '../lib/typen'
 import type { Katalog } from '../lib/zutaten'
@@ -64,6 +65,8 @@ export function Einkauf({ z, aendere, katalog, woche, setWoche }: Props) {
     )
   }
 
+  const jeLaden = (laden: Laden) => zuKaufen.filter((p) => p.laden === laden).reduce((s, p) => s + (postenPreis(p, katalog) ?? 0), 0)
+  const gesamt = LAEDEN.reduce((s, l) => s + jeLaden(l.id), 0)
   const offen = zuKaufen.filter((p) => !abgehakt.has(p.schluessel)).length + extras.filter((e) => !abgehakt.has(e.id)).length
 
   return (
@@ -72,6 +75,12 @@ export function Einkauf({ z, aendere, katalog, woche, setWoche }: Props) {
       <p className="klein">
         {offen === 0 ? 'Alles erledigt. 🎉' : `Noch ${offen} Posten offen.`} Mengen für {String(z.einstellungen.portionen).replace('.', ',')} Portionen je Abendessen, Frühstück eingerechnet.
       </p>
+      {gesamt > 0 && (
+        <p className="kosten-zeile">
+          <strong>{zeigeEuro(gesamt)}</strong>{' '}
+          <span className="klein">grob geschätzt, für das, was ihr diese Woche verbraucht – ohne Grundvorrat und eigene Posten.</span>
+        </p>
+      )}
 
       {vorrat.length > 0 && (
         <details className="karte">
@@ -102,7 +111,7 @@ export function Einkauf({ z, aendere, katalog, woche, setWoche }: Props) {
         return (
           <section key={laden.id} className="karte laden">
             <div className="laden-kopf">
-              <h2>{laden.name}</h2>
+              <h2>{laden.name}{jeLaden(laden.id) > 0 && <span className="klein laden-summe"> {zeigeEuro(jeLaden(laden.id))}</span>}</h2>
               <button onClick={() => teile(laden.id)}>Teilen</button>
             </div>
             {abschnitte.map((a) => (
