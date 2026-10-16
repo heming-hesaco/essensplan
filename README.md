@@ -92,6 +92,14 @@ npm test           # Prüfungen der Planungs- und Einkaufslogik
 npm run build      # fertige Dateien in dist/
 ```
 
+**Live unter https://essensplan-hesaco.vercel.app** (Vercel-Projekt `essensplan` im Team
+HESACO). Das Projekt ist noch **nicht mit GitHub verknüpft**: Der Vercel-GitHub-App fehlt die
+Freigabe für dieses Repository. Bis das nachgeholt ist (Vercel → Projekt → Settings → Git →
+GitHub), geht ein Push auf `main` **nicht** von selbst live; die Bereitstellung erfolgt per
+Upload der Quelldateien. Die beiden `VITE_SUPABASE_*`-Werte stehen dort als
+Umgebungsvariablen. Der Vercel-Schutz gilt nur für Vorschauen, die Produktionsadresse ist ohne
+Anmeldung erreichbar.
+
 Die App ist eine PWA: im Handy-Browser öffnen und „Zum Startbildschirm hinzufügen“. Danach
 startet sie wie eine App, und die Einkaufsliste funktioniert auch ohne Netz im Laden.
 Ausliefern lässt sie sich als statische Seite, z. B. über Vercel (Framework „Vite“, keine
