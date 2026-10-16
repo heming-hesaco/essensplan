@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react'
 import type { SeitenProps } from '../App'
+import { istLiebling } from '../lib/bewertung'
+import { ladeFotoHoch, verkleinere } from '../lib/foto'
 import { merkmale } from '../lib/planer'
+import { STARTREZEPTE } from '../lib/startrezepte'
+import { supabase } from '../lib/supabase'
 import { neueId } from '../lib/speicher'
 import {
   ABTEILUNGEN, EINHEITEN, KATEGORIEN, LAEDEN,
@@ -8,27 +12,32 @@ import {
 } from '../lib/typen'
 import { heuteIso, monatVon } from '../lib/woche'
 import { zeigeMenge } from '../lib/einkauf'
-import { zutatSchluessel, type Katalog } from '../lib/zutaten'
+import { zutatBild, zutatInfo, zutatSchluessel, type Katalog } from '../lib/zutaten'
+import { BewertungKurz, Bewertungsleiste, Bildnachweis, GerichtBild } from './Bausteine'
 
 interface Props extends SeitenProps {
   katalog: Katalog
+  /** Eigene Fotos gibt es nur im gemeinsamen Haushalt – sie liegen in dessen Speicher. */
+  haushaltId: string | null
 }
 
 type Ansicht = { art: 'liste' } | { art: 'detail'; id: string } | { art: 'bearbeiten'; rezept: Rezept; neu: boolean }
 
-export function Rezepte({ z, aendere, katalog }: Props) {
+export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
   const [ansicht, setAnsicht] = useState<Ansicht>({ art: 'liste' })
   const [suche, setSuche] = useState('')
-  const [kategorie, setKategorie] = useState<Kategorie | ''>('')
-  const monat = monatVon(heuteIso())
+  const [kategorie, setKategorie] = useState<Kategorie | '' | 'lieblinge'>('')
+  const [fotoStatus, setFotoStatus] = useState('')
+  const heute = heuteIso()
+  const monat = monatVon(heute)
 
   const gefiltert = useMemo(() => {
     const s = suche.trim().toLocaleLowerCase('de-DE')
     return z.rezepte
-      .filter((r) => !kategorie || r.kategorie === kategorie)
+      .filter((r) => !kategorie || (kategorie === 'lieblinge' ? istLiebling(r.id, z.bewertungen) : r.kategorie === kategorie))
       .filter((r) => !s || r.name.toLocaleLowerCase('de-DE').includes(s) || r.zutaten.some((zt) => zt.name.toLocaleLowerCase('de-DE').includes(s)))
       .sort((a, b) => a.name.localeCompare(b.name, 'de'))
-  }, [z.rezepte, suche, kategorie])
+  }, [z.rezepte, z.bewertungen, suche, kategorie])
 
   if (ansicht.art === 'bearbeiten') {
     return (
@@ -53,18 +62,32 @@ export function Rezepte({ z, aendere, katalog }: Props) {
     if (!r) return <button onClick={() => setAnsicht({ art: 'liste' })}>← Zurück</button>
     return (
       <>
-        <button className="still" onClick={() => setAnsicht({ art: 'liste' })}>← Alle Rezepte</button>
-        <article className="karte">
+        <button className="still" onClick={() => { setFotoStatus(''); setAnsicht({ art: 'liste' }) }}>← Alle Rezepte</button>
+        <article className="karte detail">
+          <GerichtBild rezept={r} klasse="detail-bild" />
+          <Bildnachweis foto={r.foto} />
           <h1>{r.name}</h1>
           <p className="marken">
             <span className="marke">{KATEGORIEN[r.kategorie]}</span>
             <span>{r.minuten} Min.</span>
             {r.kinderfreundlich && <span className="marke">Kind mag’s</span>}
           </p>
+          <FotoKnoepfe
+            rezept={r}
+            haushaltId={haushaltId}
+            status={fotoStatus}
+            setStatus={setFotoStatus}
+            setzeFoto={(foto) => aendere((alt) => ({ ...alt, rezepte: alt.rezepte.map((x) => (x.id === r.id ? { ...x, foto } : x)) }))}
+          />
+          <h2>Wie schmeckt’s euch?</h2>
+          <Bewertungsleiste rezeptId={r.id} z={z} aendere={aendere} datum={heute} />
           <h2>Zutaten für {r.portionen} Portionen</h2>
           <ul className="zutaten">
             {r.zutaten.map((zt, i) => (
-              <li key={i}><span>{zt.name}</span><span className="menge">{zeigeMenge(zt.menge, zt.einheit)}</span></li>
+              <li key={i}>
+                <span><span className="symbol" aria-hidden="true">{zutatBild(zutatInfo(katalog, zt.name))}</span>{zt.name}</span>
+                <span className="menge">{zeigeMenge(zt.menge, zt.einheit)}</span>
+              </li>
             ))}
           </ul>
           <h2>So geht’s</h2>
@@ -106,6 +129,7 @@ export function Rezepte({ z, aendere, katalog }: Props) {
       <input className="suche" type="search" placeholder="Suchen nach Gericht oder Zutat" value={suche} onChange={(e) => setSuche(e.target.value)} aria-label="Rezepte durchsuchen" />
       <div className="chips" role="group" aria-label="Kategorie">
         <button aria-pressed={kategorie === ''} onClick={() => setKategorie('')}>Alle</button>
+        <button aria-pressed={kategorie === 'lieblinge'} onClick={() => setKategorie('lieblinge')}>😋 Lieblinge</button>
         {(Object.keys(KATEGORIEN) as Kategorie[]).map((k) => (
           <button key={k} aria-pressed={kategorie === k} onClick={() => setKategorie(k)}>{KATEGORIEN[k]}</button>
         ))}
@@ -116,18 +140,24 @@ export function Rezepte({ z, aendere, katalog }: Props) {
           return (
             <li key={r.id}>
               <button className="karte rezept" onClick={() => setAnsicht({ art: 'detail', id: r.id })}>
-                <span className="gericht">{r.name}</span>
-                <span className="marken">
-                  <span>{KATEGORIEN[r.kategorie]}</span>
-                  <span>{r.minuten} Min.</span>
-                  {m.saisonAnteil !== null && m.saisonAnteil >= 0.75 && <span className="marke saison">Saison</span>}
+                <GerichtBild rezept={r} klasse="listen-bild" />
+                <span className="rezept-text">
+                  <span className="gericht">{r.name}</span>
+                  <span className="marken">
+                    <span>{KATEGORIEN[r.kategorie]}</span>
+                    <span>{r.minuten} Min.</span>
+                    {m.saisonAnteil !== null && m.saisonAnteil >= 0.75 && <span className="marke saison">Saison</span>}
+                    <BewertungKurz rezeptId={r.id} z={z} />
+                  </span>
                 </span>
               </button>
             </li>
           )
         })}
       </ul>
-      {gefiltert.length === 0 && <p className="klein">Nichts gefunden.</p>}
+      {gefiltert.length === 0 && (
+        <p className="klein">{kategorie === 'lieblinge' ? 'Noch keine Lieblinge – ein Gericht wird Liebling, wenn es mindestens zwei von euch lecker finden und keiner es ablehnt.' : 'Nichts gefunden.'}</p>
+      )}
     </>
   )
 }
@@ -226,5 +256,58 @@ function RezeptFormular({ start, katalog, abbrechen, speichern }: FormProps) {
         <button type="button" onClick={abbrechen}>Abbrechen</button>
       </div>
     </form>
+  )
+}
+
+interface FotoProps {
+  rezept: Rezept
+  haushaltId: string | null
+  status: string
+  setStatus: (s: string) => void
+  setzeFoto: (foto: Rezept['foto']) => void
+}
+
+/** Eigenes Foto aufnehmen oder aus der Galerie wählen; entfernen stellt das Startfoto wieder her. */
+function FotoKnoepfe({ rezept, haushaltId, status, setStatus, setzeFoto }: FotoProps) {
+  const startfoto = STARTREZEPTE.find((x) => x.id === rezept.id)?.foto
+  const eigenes = rezept.foto?.art === 'eigen' ? rezept.foto : null
+
+  if (!haushaltId) {
+    return <p className="klein">Eigene Fotos gibt es, sobald ihr unter Einstellungen einen gemeinsamen Haushalt habt.</p>
+  }
+
+  const waehle = async (datei: File | undefined) => {
+    if (!datei) return
+    setStatus('Foto wird verkleinert und hochgeladen …')
+    try {
+      const pfad = await ladeFotoHoch(haushaltId, rezept.id, await verkleinere(datei))
+      if (eigenes) await supabase?.storage.from('fotos').remove([eigenes.pfad])
+      setzeFoto({ art: 'eigen', pfad })
+      setStatus('Foto gespeichert – es erscheint auch auf dem anderen Handy.')
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : 'Das Foto ließ sich nicht speichern.')
+    }
+  }
+
+  return (
+    <div className="foto-knoepfe">
+      <label className="knopf">
+        📷 {eigenes ? 'Anderes Foto' : 'Eigenes Foto'}
+        <input type="file" accept="image/*" hidden onChange={(e) => waehle(e.target.files?.[0])} />
+      </label>
+      {eigenes && (
+        <button
+          className="still"
+          onClick={async () => {
+            await supabase?.storage.from('fotos').remove([eigenes.pfad])
+            setzeFoto(startfoto)
+            setStatus('')
+          }}
+        >
+          Eigenes Foto entfernen
+        </button>
+      )}
+      {status && <p className="klein" role="status">{status}</p>}
+    </div>
   )
 }

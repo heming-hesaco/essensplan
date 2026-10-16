@@ -1,6 +1,7 @@
+import { STARTFOTOS } from './startfotos'
 import { START_FRUEHSTUECK, STARTREZEPTE } from './startrezepte'
 import type {
-  Einstellungen, ExtraPosten, Feld, Grundposten, Plan, Rezept, ZutatInfo,
+  Bewertung, Einstellungen, ExtraPosten, Feld, Grundposten, Plan, Rezept, ZutatInfo,
 } from './typen'
 
 /** Samstag bis Freitag: Markttag, Sonntag, dann die Werktage. */
@@ -24,7 +25,15 @@ export interface Zustand {
   vorratLeer: Record<string, string[]>
   /** Von Hand ergänzte Posten je Woche (Spülmittel, Geburtstagskuchen …). */
   extras: Record<string, ExtraPosten[]>
+  /** Bewertungen je Rezept und Person. */
+  bewertungen: Record<string, Record<string, Bewertung>>
 }
+
+export const START_PERSONEN = [
+  { id: 'p1', name: 'Erwachsene/r 1' },
+  { id: 'p2', name: 'Erwachsene/r 2' },
+  { id: 'p3', name: 'Kind' },
+]
 
 export function startzustand(): Zustand {
   return {
@@ -32,12 +41,13 @@ export function startzustand(): Zustand {
     rezepte: structuredClone(STARTREZEPTE),
     katalog: [],
     raster: [...START_RASTER],
-    einstellungen: { portionen: 2.5, mittagsportionen: 2 },
+    einstellungen: { portionen: 2.5, mittagsportionen: 2, personen: structuredClone(START_PERSONEN) },
     fruehstueck: structuredClone(START_FRUEHSTUECK),
     plaene: {},
     abgehakt: {},
     vorratLeer: {},
     extras: {},
+    bewertungen: {},
   }
 }
 
@@ -75,15 +85,16 @@ export function pruefe(daten: unknown): Zustand {
   const start = startzustand()
   return {
     version: 1,
-    rezepte: Array.isArray(d.rezepte) ? d.rezepte : start.rezepte,
+    rezepte: Array.isArray(d.rezepte) ? mitStartfotos(d.rezepte) : start.rezepte,
     katalog: Array.isArray(d.katalog) ? d.katalog : [],
     raster: Array.isArray(d.raster) && d.raster.length === 7 ? d.raster : start.raster,
-    einstellungen: { ...start.einstellungen, ...(d.einstellungen ?? {}) },
+    einstellungen: mitPersonen({ ...start.einstellungen, ...(d.einstellungen ?? {}) }),
     fruehstueck: Array.isArray(d.fruehstueck) ? d.fruehstueck : start.fruehstueck,
     plaene: d.plaene ?? {},
     abgehakt: d.abgehakt ?? {},
     vorratLeer: d.vorratLeer ?? {},
     extras: d.extras ?? {},
+    bewertungen: d.bewertungen ?? {},
   }
 }
 
@@ -91,4 +102,17 @@ export function neueId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2)
+}
+
+/** Ältere Stände kennen noch keine Personen. */
+export function mitPersonen(e: Einstellungen): Einstellungen {
+  return Array.isArray(e.personen) && e.personen.length > 0 ? e : { ...e, personen: structuredClone(START_PERSONEN) }
+}
+
+/**
+ * Startgerichte aus einer Zeit vor den Fotos bekommen ihr Foto nachgereicht. Ein eigenes
+ * Foto bleibt unangetastet.
+ */
+export function mitStartfotos(rezepte: Rezept[]): Rezept[] {
+  return rezepte.map((r) => (r.foto || !STARTFOTOS[r.id] ? r : { ...r, foto: STARTFOTOS[r.id] }))
 }

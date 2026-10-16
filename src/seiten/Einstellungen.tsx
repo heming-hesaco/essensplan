@@ -68,6 +68,22 @@ export function Einstellungen({ z, aendere, katalog, gemeinsam }: Props) {
             onChange={(e) => aendere((alt) => ({ ...alt, einstellungen: { ...alt.einstellungen, mittagsportionen: Math.max(0, Number(e.target.value)) } }))} />
         </label>
         <p className="klein">Gilt für jeden Tag mit „Mehr kochen für Mittag morgen“.</p>
+        <fieldset>
+          <legend>Wer bewertet?</legend>
+          <p className="klein">Jede Person bewertet Gerichte mit 😋 🙂 😖. Die Namen lassen sich ändern, die Bewertungen bleiben.</p>
+          {z.einstellungen.personen.map((p, i) => (
+            <label key={p.id} className="zeile-label">Person {i + 1}
+              <input
+                value={p.name}
+                maxLength={30}
+                onChange={(e) => aendere((alt) => ({
+                  ...alt,
+                  einstellungen: { ...alt.einstellungen, personen: alt.einstellungen.personen.map((x) => (x.id === p.id ? { ...x, name: e.target.value } : x)) },
+                }))}
+              />
+            </label>
+          ))}
+        </fieldset>
       </section>
 
       <section className="karte formular">

@@ -1,5 +1,6 @@
-import { startzustand, type Zustand } from './speicher'
-import type { Einstellungen, ExtraPosten, Feld, Grundposten, Laden, Rezept, Tag, ZutatInfo } from './typen'
+import { bewerte } from './bewertung'
+import { mitPersonen, mitStartfotos, startzustand, type Zustand } from './speicher'
+import type { Einstellungen, ExtraPosten, Feld, Grundposten, Laden, Rezept, Tag, Wert, ZutatInfo } from './typen'
 
 /**
  * Eine Änderung, wie sie in die Datenbank geht – und wie sie von dort zurückkommt.
@@ -12,6 +13,7 @@ export type Vorgang =
   | { tabelle: 'plaene'; woche: string; tage: Tag[] }
   | { tabelle: 'haken'; woche: string; art: 'abgehakt' | 'vorrat_leer'; schluessel: string; an: boolean }
   | { tabelle: 'extras'; woche: string; id: string; text: string; laden: Laden; geloescht: boolean }
+  | { tabelle: 'bewertungen'; rezeptId: string; person: string; wert: Wert | null; datum: string }
 
 /** Zwei Vorgänge mit demselben Schlüssel betreffen dieselbe Zeile; der spätere gewinnt. */
 export function zeilenSchluessel(v: Vorgang): string {
@@ -21,6 +23,7 @@ export function zeilenSchluessel(v: Vorgang): string {
     case 'plaene': return `plaene:${v.woche}`
     case 'haken': return `haken:${v.woche}:${v.art}:${v.schluessel}`
     case 'extras': return `extras:${v.id}`
+    case 'bewertungen': return `bewertungen:${v.rezeptId}:${v.person}`
   }
 }
 
@@ -71,6 +74,18 @@ export function aenderungen(alt: Zustand, neu: Zustand): Vorgang[] {
     }
   }
 
+  const rezeptIds = new Set([...Object.keys(alt.bewertungen), ...Object.keys(neu.bewertungen)])
+  for (const rezeptId of rezeptIds) {
+    const vorher = alt.bewertungen[rezeptId] ?? {}
+    const nachher = neu.bewertungen[rezeptId] ?? {}
+    for (const [person, b] of Object.entries(nachher)) {
+      if (!gleich(vorher[person], b)) v.push({ tabelle: 'bewertungen', rezeptId, person, wert: b.wert, datum: b.datum })
+    }
+    for (const [person, b] of Object.entries(vorher)) {
+      if (!(person in nachher)) v.push({ tabelle: 'bewertungen', rezeptId, person, wert: null, datum: b.datum })
+    }
+  }
+
   return v
 }
 
@@ -102,12 +117,14 @@ export function wendeAn(z: Zustand, v: Vorgang): Zustand {
       const neu: ExtraPosten[] = v.geloescht ? liste : [...liste, { id: v.id, text: v.text, laden: v.laden }]
       return { ...z, extras: { ...z.extras, [v.woche]: neu } }
     }
+    case 'bewertungen':
+      return { ...z, bewertungen: bewerte(z.bewertungen, v.rezeptId, v.person, v.wert, v.datum) }
   }
 }
 
 /** Ein Stand ohne Inhalt: Grundlage, um einen ganzen Zustand hochzuladen. */
 export function leererZustand(): Zustand {
-  return { ...startzustand(), rezepte: [], katalog: [], fruehstueck: [], raster: [], einstellungen: { portionen: 0, mittagsportionen: 0 } }
+  return { ...startzustand(), rezepte: [], katalog: [], fruehstueck: [], raster: [], einstellungen: { portionen: 0, mittagsportionen: 0, personen: [] } }
 }
 
 /* ---------- Zeilen der Datenbank ---------- */
@@ -118,6 +135,7 @@ export interface Zeilen {
   plaene: { woche: string; tage: Tag[] }[]
   haken: { woche: string; art: 'abgehakt' | 'vorrat_leer'; schluessel: string; an: boolean }[]
   extras: { id: string; woche: string; text: string; laden: Laden; geloescht: boolean }[]
+  bewertungen: { rezept_id: string; person: string; wert: Wert | null; datum: string }[]
 }
 
 /** Der ganze Stand eines Haushalts aus den Zeilen der Datenbank. */
@@ -126,15 +144,18 @@ export function ausZeilen(zeilen: Zeilen): Zustand {
   const h = zeilen.haushalt
   let z: Zustand = {
     ...start,
-    einstellungen: (h?.einstellungen as Einstellungen) ?? start.einstellungen,
+    einstellungen: mitPersonen({ ...start.einstellungen, ...((h?.einstellungen as Einstellungen) ?? {}) }),
     raster: Array.isArray(h?.raster) && h.raster.length === 7 ? (h.raster as Feld[]) : start.raster,
     fruehstueck: Array.isArray(h?.fruehstueck) ? (h.fruehstueck as Grundposten[]) : start.fruehstueck,
     katalog: Array.isArray(h?.katalog) ? (h.katalog as ZutatInfo[]) : [],
-    rezepte: zeilen.rezepte.filter((r) => !r.geloescht).map((r) => r.daten),
+    rezepte: mitStartfotos(zeilen.rezepte.filter((r) => !r.geloescht).map((r) => r.daten)),
   }
   for (const p of zeilen.plaene) z = wendeAn(z, { tabelle: 'plaene', woche: p.woche, tage: p.tage })
   for (const k of zeilen.haken) if (k.an) z = wendeAn(z, { tabelle: 'haken', ...k })
   for (const e of zeilen.extras) if (!e.geloescht) z = wendeAn(z, { tabelle: 'extras', ...e })
+  for (const b of zeilen.bewertungen ?? []) {
+    if (b.wert !== null) z = wendeAn(z, { tabelle: 'bewertungen', rezeptId: b.rezept_id, person: b.person, wert: b.wert, datum: b.datum })
+  }
   return z
 }
 
@@ -155,6 +176,8 @@ export function zeileZuVorgang(tabelle: string, z: Record<string, unknown>): Vor
       return { tabelle, woche: z.woche as string, art: z.art as 'abgehakt' | 'vorrat_leer', schluessel: z.schluessel as string, an: z.an as boolean }
     case 'extras':
       return { tabelle, woche: z.woche as string, id: z.id as string, text: z.text as string, laden: z.laden as Laden, geloescht: z.geloescht as boolean }
+    case 'bewertungen':
+      return { tabelle, rezeptId: z.rezept_id as string, person: z.person as string, wert: (z.wert as Wert | null) ?? null, datum: z.datum as string }
     default:
       return null
   }
@@ -183,6 +206,11 @@ export function vorgangZuZeile(v: Vorgang, haushaltId: string): { tabelle: Vorga
       return {
         tabelle: 'extras', konflikt: 'haushalt_id,id',
         zeile: { haushalt_id: haushaltId, id: v.id, woche: v.woche, text: v.text, laden: v.laden, geloescht: v.geloescht },
+      }
+    case 'bewertungen':
+      return {
+        tabelle: 'bewertungen', konflikt: 'haushalt_id,rezept_id,person',
+        zeile: { haushalt_id: haushaltId, rezept_id: v.rezeptId, person: v.person, wert: v.wert, datum: v.datum },
       }
   }
 }

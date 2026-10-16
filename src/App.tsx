@@ -81,7 +81,7 @@ export function App() {
         {bereich === 'einkauf' && (
           <Einkauf z={z} aendere={aendere} katalog={katalog} woche={woche} setWoche={setWoche} />
         )}
-        {bereich === 'rezepte' && <Rezepte z={z} aendere={aendere} katalog={katalog} />}
+        {bereich === 'rezepte' && <Rezepte z={z} aendere={aendere} katalog={katalog} haushaltId={gemeinsam.haushalt?.id ?? null} />}
         {bereich === 'einstellungen' && <Einstellungen z={z} aendere={aendere} katalog={katalog} gemeinsam={gemeinsam} />}
       </main>
       <nav className="leiste" aria-label="Bereiche">

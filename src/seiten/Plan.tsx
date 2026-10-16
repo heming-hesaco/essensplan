@@ -1,9 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { SeitenProps } from '../App'
 import { merkmale, schlageWocheVor, tauscheTag, ueberblick, zufallAus, type PlanKontext } from '../lib/planer'
 import { FELDER, KATEGORIEN, WOCHENTAGE, type Kategorie, type Plan, type Tag } from '../lib/typen'
-import { kurzDatum, monatVon, plusTage } from '../lib/woche'
+import { heuteIso, kurzDatum, monatVon, plusTage } from '../lib/woche'
 import type { Katalog } from '../lib/zutaten'
+import { Bewertungsleiste, BewertungKurz, GerichtBild } from './Bausteine'
 import { WochenKopf } from './WochenKopf'
 
 interface Props extends SeitenProps {
@@ -28,6 +29,7 @@ export function PlanSeite({ z, aendere, katalog, woche, setWoche, zumEinkauf }: 
       ),
     ),
     zufall: zufallAus(Date.now()),
+    bewertungen: z.bewertungen,
   })
 
   const setzePlan = (p: Plan) => aendere((alt) => ({ ...alt, plaene: { ...alt.plaene, [woche]: p } }))
@@ -73,6 +75,7 @@ export function PlanSeite({ z, aendere, katalog, woche, setWoche, zumEinkauf }: 
                 tag={tag}
                 datum={plusTage(woche, i)}
                 z={z}
+                aendere={aendere}
                 katalog={katalog}
                 monat={monat}
                 setze={(t) => setzeTag(i, t)}
@@ -110,16 +113,21 @@ interface TagProps {
   tag: Tag
   datum: string
   z: SeitenProps['z']
+  aendere: SeitenProps['aendere']
   katalog: Katalog
   monat: number
   setze: (t: Tag) => void
   tausche: () => void
 }
 
-function TagKarte({ index, tag, datum, z, katalog, monat, setze, tausche }: TagProps) {
+function TagKarte({ index, tag, datum, z, aendere, katalog, monat, setze, tausche }: TagProps) {
   const feld = z.raster[index]
   const rezept = tag.typ === 'rezept' ? z.rezepte.find((r) => r.id === tag.rezeptId) : undefined
   const m = rezept ? merkmale(rezept, katalog, monat) : null
+  const heute = heuteIso()
+  const gegessen = datum <= heute
+  const bewertet = rezept ? Object.keys(z.bewertungen[rezept.id] ?? {}).length > 0 : false
+  const [bewerten, setBewerten] = useState(false)
 
   const waehle = (id: string) => {
     if (id === '__reste') setze({ typ: 'restetag' })
@@ -128,6 +136,7 @@ function TagKarte({ index, tag, datum, z, katalog, monat, setze, tausche }: TagP
 
   return (
     <li className={`karte tag${tag.typ === 'rezept' && tag.fixiert ? ' fixiert' : ''}`}>
+      {tag.typ === 'rezept' && <GerichtBild rezept={rezept} klasse="tag-bild" />}
       <div className="tag-kopf">
         <span className="tag-name">{WOCHENTAGE[index]}</span>
         <span className="klein">{kurzDatum(datum).slice(4)} · {FELDER[feld]}</span>
@@ -145,7 +154,20 @@ function TagKarte({ index, tag, datum, z, katalog, monat, setze, tausche }: TagP
               {m?.fisch && <span className="marke">Fisch</span>}
               {m?.fleisch && !m.fisch && <span className="marke">Fleisch</span>}
               {rezept.kinderfreundlich && <span className="marke">Kind mag’s</span>}
+              <BewertungKurz rezeptId={rezept.id} z={z} />
             </p>
+          )}
+          {rezept && gegessen && (
+            bewerten ? (
+              <>
+                <Bewertungsleiste rezeptId={rezept.id} z={z} aendere={aendere} datum={datum} kompakt />
+                <button className="still" onClick={() => setBewerten(false)}>Fertig</button>
+              </>
+            ) : (
+              <button className="wie-wars" onClick={() => setBewerten(true)}>
+                {bewertet ? 'Bewertung ändern' : 'Wie war’s? Jetzt bewerten'}
+              </button>
+            )
           )}
           <label className="schalter">
             <input

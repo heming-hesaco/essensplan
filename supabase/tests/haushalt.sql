@@ -42,11 +42,38 @@ update public.haken set an = false where schluessel = 'spaghetti|g';
 select pg_temp.pruefe((select count(*) from public.mitglieder) = 2, 'zwei Mitglieder');
 reset role;
 
+-- Bewertungen und Fotos: Ben bewertet und lädt ein Foto in den Ordner des Haushalts.
+select pg_temp.als('22222222-2222-2222-2222-222222222222');
+insert into public.bewertungen (haushalt_id, rezept_id, person, wert, datum)
+  select id, 'lasagne', 'p3', 3, '2026-10-18' from t_ids;
+insert into storage.objects (bucket_id, name, owner)
+  select 'fotos', id || '/lasagne-1.jpg', '22222222-2222-2222-2222-222222222222' from t_ids;
+select pg_temp.pruefe((select count(*) from storage.objects where bucket_id = 'fotos') = 1, 'Ben sieht das Foto des Haushalts');
+do $$ begin
+  insert into storage.objects (bucket_id, name) values ('fotos', 'kein-haushalt/x.jpg');
+  raise exception 'FEHLGESCHLAGEN: Foto außerhalb des Haushaltsordners';
+exception when insufficient_privilege then raise notice 'ok: kein Foto außerhalb des eigenen Ordners';
+end $$;
+do $$ begin
+  insert into public.bewertungen (haushalt_id, rezept_id, person, wert, datum)
+    select id, 'lasagne', 'p1', 7, '2026-10-18' from t_ids;
+  raise exception 'FEHLGESCHLAGEN: Wert 7 angenommen';
+exception when check_violation then raise notice 'ok: nur Werte 1 bis 3';
+end $$;
+reset role;
+
 -- Ein fremdes Konto sieht und ändert nichts.
 select pg_temp.als('33333333-3333-3333-3333-333333333333');
 select pg_temp.pruefe((select count(*) from public.rezepte) = 0, 'Fremder liest keine Rezepte');
 select pg_temp.pruefe((select count(*) from public.haken) = 0, 'Fremder liest keine Haken');
 select pg_temp.pruefe((select count(*) from public.mitglieder) = 0, 'Fremder liest keine Mitglieder');
+select pg_temp.pruefe((select count(*) from public.bewertungen) = 0, 'Fremder liest keine Bewertungen');
+select pg_temp.pruefe((select count(*) from storage.objects where bucket_id = 'fotos') = 0, 'Fremder sieht keine Fotos');
+do $$ begin
+  insert into storage.objects (bucket_id, name) select 'fotos', id || '/fremd.jpg' from t_ids;
+  raise exception 'FEHLGESCHLAGEN: Fremder lädt in fremden Haushalt hoch';
+exception when insufficient_privilege then raise notice 'ok: Fremder lädt nicht in fremden Haushalt';
+end $$;
 update public.rezepte set daten = '{"name":"gehackt"}';
 do $$ begin
   insert into public.rezepte (haushalt_id, id, daten) select id, 'boese', '{}' from t_ids;
@@ -108,6 +135,7 @@ select public.haushalt_verlassen();
 reset role;
 select pg_temp.pruefe((select count(*) from public.haushalte) = 0, 'letzter geht: Haushalt gelöscht');
 select pg_temp.pruefe((select count(*) from public.rezepte) = 0, 'mit ihm die Rezepte');
+select pg_temp.pruefe((select count(*) from public.bewertungen) = 0, 'und die Bewertungen');
 
 select 'ALLE PRÜFUNGEN BESTANDEN';
 rollback;

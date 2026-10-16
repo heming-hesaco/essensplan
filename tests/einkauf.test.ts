@@ -5,7 +5,7 @@ import type { Plan, Rezept } from '../src/lib/typen'
 import { baueKatalog } from '../src/lib/zutaten'
 
 const katalog = baueKatalog([])
-const einst = { portionen: 2.5, mittagsportionen: 2 }
+const einst = { portionen: 2.5, mittagsportionen: 2, personen: [] }
 
 function plan(...tage: [string, boolean][]): Plan {
   return {

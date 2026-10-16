@@ -28,7 +28,7 @@ describe('Änderungen erkennen', () => {
     const b: Zustand = {
       ...mitPlan(a),
       rezepte: a.rezepte.slice(1).map((r, i) => (i === 0 ? { ...r, minuten: 99 } : r)),
-      einstellungen: { portionen: 3, mittagsportionen: 2 },
+      einstellungen: { ...a.einstellungen, portionen: 3 },
       extras: { [W]: [{ id: 'x', text: 'Spülmittel', laden: 'aldi' }] },
     }
     const v = aenderungen(a, b)
@@ -48,6 +48,7 @@ describe('Hin und zurück', () => {
       abgehakt: { [W]: ['a|g', 'b|Stück'] },
       vorratLeer: { [W]: ['salz|TL'] },
       extras: { [W]: [{ id: 'x', text: 'Kerzen', laden: 'edeka' }] },
+      bewertungen: { lasagne: { p1: { wert: 3, datum: '2026-10-18' }, p3: { wert: 1, datum: '2026-10-18' } } },
       katalog: [{ name: 'Safran', laden: 'edeka', abteilung: 'gewuerz', haltbarkeit: 'lang' }],
     }
     const v = aenderungen(leererZustand(), z)
@@ -60,6 +61,7 @@ describe('Hin und zurück', () => {
       plaene: von('plaene'),
       haken: von('haken'),
       extras: von('extras'),
+      bewertungen: von('bewertungen'),
     })
     expect(zurueck).toEqual(z)
   })
@@ -99,5 +101,25 @@ describe('Warteschlange', () => {
     expect(liste).toEqual([andere, ab])
     expect(wartetAuf(liste, an)).toBe(true)
     expect(wartetAuf(liste, { ...an, schluessel: 'z|g' })).toBe(false)
+  })
+})
+
+describe('Bewertungen im Abgleich', () => {
+  it('jede Person ist eine eigene Zeile, Zurücknehmen wird zu wert = null', () => {
+    const a = startzustand()
+    const b: Zustand = { ...a, bewertungen: { lasagne: { p1: { wert: 3, datum: W }, p2: { wert: 2, datum: W } } } }
+    expect(aenderungen(a, b).map(zeilenSchluessel).sort()).toEqual(['bewertungen:lasagne:p1', 'bewertungen:lasagne:p2'])
+    const c: Zustand = { ...b, bewertungen: { lasagne: { p1: { wert: 3, datum: W } } } }
+    expect(aenderungen(b, c)).toEqual([{ tabelle: 'bewertungen', rezeptId: 'lasagne', person: 'p2', wert: null, datum: W }])
+    expect(wendeAn(b, aenderungen(b, c)[0]).bewertungen).toEqual(c.bewertungen)
+    // Die letzte Bewertung weg: kein leerer Eintrag bleibt zurück.
+    const leer = wendeAn(c, { tabelle: 'bewertungen', rezeptId: 'lasagne', person: 'p1', wert: null, datum: W })
+    expect(leer.bewertungen).toEqual({})
+  })
+
+  it('ältere Haushalte ohne Personen bekommen die Startpersonen', () => {
+    const z = ausZeilen({ haushalt: { einstellungen: { portionen: 3, mittagsportionen: 1 }, raster: null, fruehstueck: null, katalog: null }, rezepte: [], plaene: [], haken: [], extras: [], bewertungen: [] })
+    expect(z.einstellungen.portionen).toBe(3)
+    expect(z.einstellungen.personen.map((p) => p.id)).toEqual(['p1', 'p2', 'p3'])
   })
 })

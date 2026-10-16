@@ -32,3 +32,28 @@ describe('Startdaten', () => {
     expect(nudeln).toBeGreaterThanOrEqual(8)
   })
 })
+
+describe('Startfotos', () => {
+  it('jedes Foto gehört zu einem Startgericht und nennt Urheber, Lizenz und Quelle', async () => {
+    const { STARTFOTOS } = await import('../src/lib/startfotos')
+    const ids = new Set(STARTREZEPTE.map((r) => r.id))
+    for (const [id, f] of Object.entries(STARTFOTOS)) {
+      expect(ids.has(id), id).toBe(true)
+      expect(f.art).toBe('frei')
+      if (f.art !== 'frei') continue
+      expect(f.url).toMatch(/^https:\/\/live\.staticflickr\.com\//)
+      expect(f.seite).toMatch(/^https:\/\//)
+      expect(f.autor.length).toBeGreaterThan(0)
+      expect(f.lizenz).toMatch(/^(CC BY(-SA)? \d|CC0|Public Domain)/)
+    }
+  })
+
+  it('ältere gespeicherte Rezepte ohne Foto bekommen es nachgereicht, eigene bleiben', async () => {
+    const { mitStartfotos } = await import('../src/lib/speicher')
+    const ohne = STARTREZEPTE.map(({ foto: _f, ...r }) => r)
+    const eigen = { ...ohne[0], foto: { art: 'eigen' as const, pfad: 'h/x.jpg' } }
+    const neu = mitStartfotos([eigen, ...ohne.slice(1)])
+    expect(neu[0].foto).toEqual({ art: 'eigen', pfad: 'h/x.jpg' })
+    expect(neu.filter((r) => r.foto).length).toBeGreaterThanOrEqual(24)
+  })
+})

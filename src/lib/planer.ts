@@ -1,3 +1,4 @@
+import { bewertungsPunkte, type Bewertungen } from './bewertung'
 import type { Feld, Plan, Rezept, Tag } from './typen'
 import { zutatInfo, zutatSchluessel, type Katalog } from './zutaten'
 
@@ -12,6 +13,8 @@ export interface PlanKontext {
   kuerzlich: Set<string>
   /** Zufallsquelle 0–1; in Tests fest, damit Vorschläge nachvollziehbar sind. */
   zufall: () => number
+  /** Eure Bewertungen: Lieblinge kommen öfter, „nicht nochmal“ fast nie. */
+  bewertungen?: Bewertungen
 }
 
 const FISCH = /fisch|lachs|thunfisch|seelachs/i
@@ -69,6 +72,7 @@ export function passtInsFeld(rezept: Rezept, feld: Feld): boolean {
  *   −1,8 am Freitag. Nur ein Abzug für späte Tage reichte nicht: am Samstag wäre es
  *   dann gleichauf, und das Haltbare käme zuerst dran.
  * - In den letzten zwei Wochen gegessen: −6.
+ * - Bewertungen: je „lecker“ +0,8, je „nicht nochmal“ −8.
  * - Zufall bis +2, damit die Woche nicht jedes Mal gleich aussieht.
  */
 export function bewerte(rezept: Rezept, tagIndex: number, gewaehlt: Rezept[], ctx: PlanKontext): number {
@@ -79,6 +83,7 @@ export function bewerte(rezept: Rezept, tagIndex: number, gewaehlt: Rezept[], ct
   punkte += Math.min(3, m.teilbar.filter((t) => vorhanden.has(t)).length)
   if (m.empfindlich) punkte += 0.6 * (3 - tagIndex)
   if (ctx.kuerzlich.has(rezept.id)) punkte -= 6
+  if (ctx.bewertungen) punkte += bewertungsPunkte(rezept.id, ctx.bewertungen)
   punkte += ctx.zufall() * 2
   return punkte
 }

@@ -46,6 +46,8 @@ export interface ZutatInfo {
   saison?: number[]
   /** Grundvorrat (Öl, Salz, Gewürze): kommt nur auf die Liste, wenn er leer ist. */
   vorrat?: boolean
+  /** Symbol für Listen; fehlt es, steht das der Abteilung da. */
+  bild?: string
 }
 
 export type Einheit =
@@ -74,6 +76,15 @@ export const KATEGORIEN: Record<Kategorie, string> = {
   besonders: 'Etwas Besonderes',
 }
 
+/**
+ * Foto eines Gerichts. Entweder ein frei lizenziertes Bild (Creative Commons) – dann
+ * gehören Urheber, Lizenz und Quelle dazu und werden angezeigt – oder ein eigenes Foto im
+ * Speicher des Haushalts (`pfad`).
+ */
+export type Foto =
+  | { art: 'frei'; quelle: string; url: string; seite: string; autor: string; lizenz: string }
+  | { art: 'eigen'; pfad: string }
+
 export interface Rezept {
   id: string
   name: string
@@ -85,6 +96,7 @@ export interface Rezept {
   kinderfreundlich: boolean
   zutaten: RezeptZutat[]
   anleitung: string
+  foto?: Foto
 }
 
 /** Was im Wochenraster an einem Tag vorgesehen ist. */
@@ -116,11 +128,33 @@ export interface Grundposten {
   einheit: Einheit
 }
 
+/** Wer bewertet. Die Id bleibt, der Name lässt sich ändern. */
+export interface Person {
+  id: string
+  name: string
+}
+
+/** 3 = lecker, 2 = geht so, 1 = nicht nochmal */
+export type Wert = 1 | 2 | 3
+
+export const WERTE: { wert: Wert; zeichen: string; name: string }[] = [
+  { wert: 3, zeichen: '😋', name: 'Lecker' },
+  { wert: 2, zeichen: '🙂', name: 'Geht so' },
+  { wert: 1, zeichen: '😖', name: 'Nicht nochmal' },
+]
+
+export interface Bewertung {
+  wert: Wert
+  /** ISO-Datum der Bewertung */
+  datum: string
+}
+
 export interface Einstellungen {
   /** Portionen je Abendessen: zwei Erwachsene und ein Kind ≈ 2,5. */
   portionen: number
   /** Zusätzliche Portionen, wenn fürs Mittagessen am nächsten Tag mitgekocht wird. */
   mittagsportionen: number
+  personen: Person[]
 }
 
 export interface ExtraPosten {

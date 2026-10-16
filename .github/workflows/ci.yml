@@ -31,6 +31,8 @@ jobs:
       PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
+      - name: Speicher vorbereiten (nur Wegwerf-Datenbank)
+        run: psql -h localhost -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -q -f supabase/tests/_speicher_vorbereiten.sql
       - name: Migrationen
         run: for f in supabase/migrations/*.sql; do psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "$f"; done
       - name: Zugriffsrechte

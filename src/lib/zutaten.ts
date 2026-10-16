@@ -126,6 +126,36 @@ export const STARTKATALOG: ZutatInfo[] = [
   vorrat('Honig'),
 ]
 
+/** Symbole der Zutaten. Was hier fehlt, bekommt das Symbol seiner Abteilung. */
+const BILDER: Record<string, string> = {
+  Kartoffeln: '🥔', Möhren: '🥕', Zwiebeln: '🧅', Knoblauch: '🧄', 'Hokkaido-Kürbis': '🎃',
+  Lauch: '🥬', Brokkoli: '🥦', Zucchini: '🥒', Paprika: '🫑', Tomaten: '🍅', Kirschtomaten: '🍅',
+  Gurke: '🥒', Kopfsalat: '🥬', 'Rote Bete': '🟣', Pastinaken: '🥕', Spitzkohl: '🥬', Wirsing: '🥬',
+  Kohlrabi: '🥬', Champignons: '🍄', Süßkartoffeln: '🍠', Petersilie: '🌿', Äpfel: '🍎', Birnen: '🍐',
+  Bananen: '🍌', Zitrone: '🍋', Bauernbrot: '🍞', Baguette: '🥖', Bergkäse: '🧀', Gouda: '🧀',
+  Eier: '🥚', Milch: '🥛', Butter: '🧈', Sahne: '🥛', Schmand: '🥛', Joghurt: '🥛', Feta: '🧀',
+  Mozzarella: '🧀', Parmesan: '🧀', Reibekäse: '🧀', 'Tortilla-Wraps': '🫓', Burgerbrötchen: '🍔',
+  Rinderhack: '🥩', Hähnchenbrustfilet: '🍗', Hähnchenschenkel: '🍗', Kochschinken: '🥓',
+  'Wiener Würstchen': '🌭', Fischstäbchen: '🐟', 'Lachsfilet (TK)': '🐟', 'Seelachsfilet (TK)': '🐟',
+  'Erbsen (TK)': '🫛', 'Blattspinat (TK)': '🥬', Spaghetti: '🍝', Vollkornspaghetti: '🍝', Penne: '🍝',
+  Fusilli: '🍝', Makkaroni: '🍝', Tagliatelle: '🍝', Lasagneplatten: '🍝', 'Kleine Suppennudeln': '🍝',
+  Reis: '🍚', 'Rote Linsen': '🫘', Tellerlinsen: '🫘', Haferflocken: '🥣', 'Passierte Tomaten': '🥫',
+  'Gehackte Tomaten': '🥫', Kidneybohnen: '🫘', Kichererbsen: '🫘', Mais: '🌽', Kokosmilch: '🥥',
+  Thunfisch: '🐟', Pesto: '🌿', Apfelmus: '🍎', 'Mie-Nudeln': '🍜', 'Frischer Salbei': '🌿',
+  Salz: '🧂', Olivenöl: '🫒', Rapsöl: '🫗', Mehl: '🌾', Zucker: '🍬', Honig: '🍯', Marmelade: '🍓',
+}
+
+const ABTEILUNG_BILD: Record<Abteilung, string> = {
+  gemuese: '🥬', obst: '🍎', brot: '🍞', kaese: '🧀', eier: '🥚', milch: '🥛', fleisch: '🥩', fisch: '🐟',
+  tk: '❄️', trocken: '🌾', konserve: '🥫', gewuerz: '🧂', sonstiges: '🛒',
+}
+
+for (const info of STARTKATALOG) if (BILDER[info.name]) info.bild = BILDER[info.name]
+
+export function zutatBild(info: ZutatInfo): string {
+  return info.bild ?? ABTEILUNG_BILD[info.abteilung]
+}
+
 /** Schlüssel für Vergleiche: Groß-/Kleinschreibung und Leerzeichen spielen keine Rolle. */
 export function zutatSchluessel(name: string): string {
   return name.trim().toLocaleLowerCase('de-DE').replace(/\s+/g, ' ')

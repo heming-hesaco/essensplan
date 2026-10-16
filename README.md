@@ -40,6 +40,20 @@ Linsen-Bolognese, Lasagne und Minestrone in anderen Kategorien. Eigene Rezepte a
 ändern, kopieren, löschen. Für eine neue Zutat fragt das Formular, in welchem Laden ihr sie
 kauft. Unter Einstellungen lässt sich für jede Zutat der Laden ändern.
 
+**Fotos und Bewertungen.** 24 der 33 Startgerichte haben ein Foto: frei lizenziert
+(CC BY, CC BY-SA), gefunden über Openverse, gehostet bei Flickr, jedes von Hand ausgewählt.
+Urheber und Lizenz stehen in der Rezeptansicht. Wo kein passendes Foto zu finden war, zeigt
+die App eine farbige Kachel mit dem Symbol der Kategorie. Im gemeinsamen Haushalt lässt sich
+jedes Gericht selbst fotografieren; das Foto wird auf 1000 Pixel verkleinert und liegt privat
+im Speicher des Haushalts. Zutaten tragen in Liste und Rezept ein Symbol.
+
+Jede Person (Namen in den Einstellungen) bewertet ein Gericht mit 😋 lecker, 🙂 geht so oder
+😖 nicht nochmal, im Wochenplan ab dem Tag des Essens („Wie war’s?“) oder in der
+Rezeptansicht. Der Wochenvorschlag gibt je „lecker“ +0,8 Punkte und je „nicht nochmal“ −8 –
+mehr, als ein Gericht sonst sammeln kann. Ein abgelehntes Gericht kommt also nur, wenn für
+den Tag nichts anderes passt. Unter Rezepte filtert „Lieblinge“ auf Gerichte, die mindestens
+zwei lecker finden und keiner ablehnt.
+
 ## Gemeinsamer Stand auf beiden Handys
 
 Unter **Einstellungen → Gemeinsam nutzen** legt jeder ein Konto an (E-Mail und Passwort).
@@ -79,9 +93,14 @@ Die Datenbankprüfung läuft gegen eine Wegwerf-Datenbank, nie gegen das echte P
 ```bash
 docker run -d --name pg-test -e POSTGRES_PASSWORD=postgres -p 54329:5432 public.ecr.aws/supabase/postgres:17.6.1.010
 export PGPASSWORD=postgres
-psql -h localhost -p 54329 -U postgres -d postgres -f supabase/migrations/20261015190000_gemeinsamer_haushalt.sql
+psql -h localhost -p 54329 -U supabase_admin -d postgres -f supabase/tests/_speicher_vorbereiten.sql
+for f in supabase/migrations/*.sql; do psql -h localhost -p 54329 -U postgres -d postgres -f "$f"; done
 psql -h localhost -p 54329 -U postgres -d postgres -v ON_ERROR_STOP=1 -f supabase/tests/haushalt.sql
 ```
+
+`_speicher_vorbereiten.sql` ergänzt im nackten Image, was im echten Supabase die
+Storage-API anlegt; gegen das echte Projekt wird es nie ausgeführt. Bekannte Lücke: Verlässt
+das letzte Konto den Haushalt, bleiben dessen eigene Fotos im Speicher liegen.
 
 ## Benutzen
 
@@ -117,6 +136,9 @@ src/lib/speicher.ts     Laden, Speichern, Sicherung
 src/lib/abgleich.ts     Änderungen ↔ Datenbankzeilen (rein, getestet)
 src/lib/warteschlange.ts Änderungen, die noch nicht beim Server sind
 src/lib/useGemeinsam.ts Anmeldung, Haushalt, Realtime, Nachschicken
+src/lib/bewertung.ts    Bewertungen und ihr Gewicht im Vorschlag
+src/lib/foto.ts         Eigene Fotos: verkleinern, hochladen, signierte Links
+src/lib/startfotos.ts   Fotos der Startgerichte mit Urheber und Lizenz
 supabase/               Migration und Prüfung der Zugriffsrechte
 src/seiten/             Woche, Einkauf, Rezepte, Einstellungen
 tests/                  Vitest
@@ -124,6 +146,5 @@ tests/                  Vitest
 
 ## Nächste Stufen
 
-1. Bewertung nach dem Essen (auch vom Kind), Favoriten öfter, Flops seltener.
-2. Wünsche wischen: jeder sagt vor der Planung, worauf er Lust hat; Kinderansicht mit Bildern.
-3. Grobe Kosten je Woche, Vorkochplan für Sonntag, Mittwochs-Nachkauf (Brot, Milch).
+1. Wünsche wischen: jeder sagt vor der Planung, worauf er Lust hat; Kinderansicht mit Bildern.
+2. Grobe Kosten je Woche, Vorkochplan für Sonntag, Mittwochs-Nachkauf (Brot, Milch).

@@ -1,7 +1,7 @@
 import type {
   Abteilung, Einheit, Einstellungen, Grundposten, Laden, Plan, Rezept,
 } from './typen'
-import { zutatInfo, zutatSchluessel, type Katalog } from './zutaten'
+import { zutatBild, zutatInfo, zutatSchluessel, type Katalog } from './zutaten'
 
 export interface Posten {
   /** Name und Einheit – dieselbe Zutat in zwei Einheiten bleibt zwei Zeilen. */
@@ -12,6 +12,8 @@ export interface Posten {
   laden: Laden
   abteilung: Abteilung
   vorrat: boolean
+  /** Symbol für die Liste */
+  bild: string
   /** Wofür die Zutat gebraucht wird (Gerichtsnamen bzw. „Frühstück“). */
   fuer: string[]
 }
@@ -72,6 +74,7 @@ export function erstelleListe(
       laden: info.laden,
       abteilung: info.abteilung,
       vorrat: info.vorrat === true,
+      bild: zutatBild(info),
       fuer: [],
     }
     p.menge += menge

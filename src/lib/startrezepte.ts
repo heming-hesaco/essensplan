@@ -1,3 +1,4 @@
+import { STARTFOTOS } from './startfotos'
 import type { Einheit, Kategorie, Rezept } from './typen'
 
 type Z = [string, number, Einheit]
@@ -20,6 +21,7 @@ function r(
     kinderfreundlich,
     zutaten: zutaten.map(([name, menge, einheit]) => ({ name, menge, einheit })),
     anleitung,
+    ...(STARTFOTOS[id] ? { foto: STARTFOTOS[id] } : {}),
   }
 }
 

@@ -188,3 +188,43 @@ legend { font-weight: 600; padding: 0 4px; }
 .punkt.verbunden { background: var(--akzent); }
 .punkt.offline { background: var(--saison); }
 button:disabled { opacity: 0.5; cursor: default; }
+
+/* Bilder */
+.bild { display: block; width: 100%; object-fit: cover; background: var(--akzent-hell); }
+.ersatz { display: grid; place-items: center; }
+.ersatz span { font-size: 2.6rem; filter: saturate(1.1); }
+.kat-nudeln { background: linear-gradient(135deg, #f7e3c4, #f0c987); }
+.kat-huelsenfruechte { background: linear-gradient(135deg, #f1dccb, #d9a77e); }
+.kat-fisch { background: linear-gradient(135deg, #d8e8f2, #a9c9de); }
+.kat-ofen { background: linear-gradient(135deg, #f5d5c5, #e3a083); }
+.kat-gemuese { background: linear-gradient(135deg, #dcefd8, #a8d39e); }
+.kat-besonders { background: linear-gradient(135deg, #f6d6dc, #e7a0ae); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .ersatz { filter: brightness(0.75); }
+}
+.tag-bild { height: 140px; margin: -14px -14px 10px; width: calc(100% + 28px); border-radius: var(--radius) var(--radius) 0 0; }
+.tag-bild.ersatz span { font-size: 3rem; }
+.detail-bild { height: 220px; margin: -14px -14px 6px; width: calc(100% + 28px); border-radius: var(--radius) var(--radius) 0 0; }
+.detail-bild.ersatz span { font-size: 4rem; }
+.detail h1 { margin-top: 4px; }
+.detail h2 { margin-top: 16px; }
+.listen-bild { width: 72px; height: 72px; flex: none; border-radius: 10px; }
+.listen-bild.ersatz span { font-size: 2rem; }
+.rezept { flex-direction: row !important; align-items: center; gap: 12px !important; padding: 10px; }
+.rezept-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nachweis { font-size: 0.7rem; color: var(--gedaempft); margin: 0 0 4px; }
+.nachweis a { color: inherit; }
+.symbol { display: inline-block; width: 1.6em; text-align: center; }
+.symbol.gross { font-size: 1.25rem; width: 1.6rem; flex: none; }
+
+/* Bewertung */
+.bewertung { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.bewertung-zeile { display: flex; align-items: center; gap: 6px; }
+.bewertung-name { flex: 1; font-size: 0.9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gesicht { min-width: 44px; min-height: 44px; padding: 0; font-size: 1.4rem; border-radius: 12px; filter: grayscale(0.7); opacity: 0.7; }
+.gesicht[aria-pressed='true'] { filter: none; opacity: 1; background: var(--akzent-hell); border-color: var(--akzent); }
+.bewertung.kompakt .gesicht { min-width: 40px; min-height: 40px; font-size: 1.25rem; }
+.bewertung-kurz { display: inline-flex; gap: 6px; }
+.wie-wars { width: 100%; margin: 4px 0 2px; border-style: dashed; color: var(--akzent); font-weight: 600; }
+.foto-knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; }
+.knopf { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--linie); background: var(--karte); cursor: pointer; }

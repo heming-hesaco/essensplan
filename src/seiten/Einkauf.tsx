@@ -85,6 +85,7 @@ export function Einkauf({ z, aendere, katalog, woche, setWoche }: Props) {
               <li key={p.schluessel}>
                 <label className="posten">
                   <input type="checkbox" checked={leer.has(p.schluessel)} onChange={() => umschalten('vorratLeer', p.schluessel)} />
+                  <span className="symbol gross" aria-hidden="true">{p.bild}</span>
                   <span className="posten-name">{p.name}</span>
                   <span className="klein">leer</span>
                 </label>
@@ -112,6 +113,7 @@ export function Einkauf({ z, aendere, katalog, woche, setWoche }: Props) {
                     <li key={p.schluessel}>
                       <label className={`posten${abgehakt.has(p.schluessel) ? ' erledigt' : ''}`}>
                         <input type="checkbox" checked={abgehakt.has(p.schluessel)} onChange={() => umschalten('abgehakt', p.schluessel)} />
+                        <span className="symbol gross" aria-hidden="true">{p.bild}</span>
                         <span className="posten-name">
                           {p.name}
                           <span className="klein fuer">{p.fuer.join(' · ')}</span>

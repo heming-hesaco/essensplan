@@ -94,14 +94,17 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
     if (!supabase || !id) return
     await senden()
     const grenze = plusTage(heuteIso(), -HAKEN_TAGE)
-    const [h, r, p, k, e, m] = await Promise.all([
+    const [h, r, p, k, e, m, b] = await Promise.all([
       supabase.from('haushalte').select('name, einladungscode, einstellungen, raster, fruehstueck, katalog').eq('id', id).maybeSingle(),
       supabase.from('rezepte').select('id, daten, geloescht').eq('haushalt_id', id),
       supabase.from('plaene').select('woche, tage').eq('haushalt_id', id),
       supabase.from('haken').select('woche, art, schluessel, an').eq('haushalt_id', id).gte('woche', grenze),
       supabase.from('extras').select('id, woche, text, laden, geloescht').eq('haushalt_id', id).gte('woche', grenze),
       supabase.from('mitglieder').select('user_id', { count: 'exact', head: true }).eq('haushalt_id', id),
+      supabase.from('bewertungen').select('rezept_id, person, wert, datum').eq('haushalt_id', id),
     ])
+    // Bewertungen sind jünger als der Rest: fehlt ihre Tabelle noch, läuft der Abgleich
+    // ohne sie weiter, statt ganz stehen zu bleiben.
     const fehlerhaft = [h, r, p, k, e].find((x) => x.error)
     if (fehlerhaft?.error) {
       setVerbindung(istNetzfehler(fehlerhaft.error) ? 'offline' : 'verbunden')
@@ -113,13 +116,15 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
       setHaushalt(null)
       return
     }
-    let z = ausZeilen({
+    let z: Zustand = ausZeilen({
       haushalt: h.data,
       rezepte: r.data ?? [],
       plaene: p.data ?? [],
       haken: k.data ?? [],
       extras: e.data ?? [],
+      bewertungen: b.error ? [] : b.data ?? [],
     } as Zeilen)
+    if (b.error) z = { ...z, bewertungen: zRef.current.bewertungen }
     for (const v of schlange.current) z = wendeAn(z, v)
     setzeVomServer(z)
     setHaushalt({ id, name: h.data.name, einladungscode: h.data.einladungscode, mitglieder: m.error ? null : m.count })
@@ -188,7 +193,7 @@ export function useGemeinsam({ zRef, setzeVomServer }: Optionen) {
     ladeAlles()
 
     const kanal = client.channel(`haushalt-${haushaltId}`)
-    for (const tabelle of ['rezepte', 'plaene', 'haken', 'extras', 'haushalte'] as const) {
+    for (const tabelle of ['rezepte', 'plaene', 'haken', 'extras', 'haushalte', 'bewertungen'] as const) {
       kanal.on(
         'postgres_changes',
         { event: '*', schema: 'public', table: tabelle, filter: tabelle === 'haushalte' ? `id=eq.${haushaltId}` : `haushalt_id=eq.${haushaltId}` },
