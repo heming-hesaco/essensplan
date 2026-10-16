@@ -21,7 +21,7 @@ self.addEventListener('fetch', (e) => {
   const req = e.request
   if (req.method !== 'GET') return
 
-  // Fotos der Gerichte (Wikimedia, eigener Speicher): einmal geladen, auch ohne Netz da.
+  // Fotos der Gerichte (Flickr, eigener Speicher): einmal geladen, auch ohne Netz da.
   if (req.destination === 'image' && new URL(req.url).origin !== self.location.origin) {
     e.respondWith(
       caches.open(BILDER).then((c) =>
