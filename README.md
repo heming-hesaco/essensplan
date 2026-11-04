@@ -4,19 +4,19 @@ Ein Wochenplan fürs Essen für zwei Erwachsene und ein Kind – mit dem Ziel, *
 Woche** einzukaufen: Samstag Wochenmarkt (Obst, Gemüse, Brot, Käse, Eier), danach Aldi
 (Grundlebensmittel), Edeka nur für Besonderes.
 
-## Was die erste Stufe kann
+## Was die App kann
 
 **Wochenplan (Samstag bis Freitag).** Ein Knopf schlägt sieben Abendessen vor, nach einem
 Wochenraster, das ihr in den Einstellungen ändern könnt:
 
 | Sa | So | Mo | Di | Mi | Do | Fr |
 |---|---|---|---|---|---|---|
-| Gemüse (Markttag) | Etwas Besonderes | Nudeln | Hülsenfrüchte | Fisch | Ofen & Blech | Wunsch des Kindes |
+| Kartoffeln & Gemüse (Markttag) | Etwas Besonderes | Eintopf & Suppe | Reis & Pfanne | Fisch | Brotzeit | Wunsch des Kindes |
 
 Der Vorschlag
 - nimmt bevorzugt **Saisonware** (Saisonkalender für Deutschland im Zutatenkatalog),
 - verteilt frische Zutaten auf **mehrere Gerichte** (der halbe Kürbis vom Samstag landet am
-  Donnerstag auf dem Blech),
+  Dienstag im Risotto),
 - legt **Empfindliches an den Wochenanfang** (frisches Fleisch, Brokkoli, Salat),
 - wiederholt keine Gerichte der **letzten zwei Wochen**, wenn es Alternativen gibt.
 
@@ -33,14 +33,38 @@ Abendessen, +2 mit Resten) und auf kaufbare Mengen gerundet – getrennt nach **
 Aldi und Edeka**, innerhalb des Ladens nach Stand bzw. Gang. Abhaken, Erledigtes rutscht nach
 unten, „Teilen“ schickt die Liste eines Ladens per WhatsApp oder Nachricht. Grundvorrat (Öl,
 Gewürze, Mehl) steht nur unter „Vorrat prüfen“ und kommt erst auf die Liste, wenn er leer ist.
-Eigene Posten (Spülmittel …) lassen sich je Laden ergänzen.
+Oben auf dem Zettel stehen **Schnellknöpfe** für Grundnahrungsmittel (Milch, Brot,
+Brötchen, Butter, Eier, Joghurt, Käse, Äpfel, Bananen, Kaffee, Klopapier, Spülmittel): ein
+Tippen setzt den Posten drauf, ein zweites nimmt ihn wieder herunter. Steht etwas schon über
+den Wochenplan drauf, zeigt der Knopf einen Haken und setzt nichts doppelt. Die Knöpfe lassen
+sich unter Einstellungen ändern. Ins freie Feld tippt man alles andere („2 Gurken“); der Laden
+wird aus dem Katalog vorgeschlagen. **„Ganzen Zettel teilen“** schickt alle offenen Posten,
+nach Laden gegliedert, per WhatsApp, SMS oder Mail.
 
-**Rezepte.** 33 Startrezepte, davon 9 Nudelgerichte – dazu Thunfisch-Nudeln,
-Linsen-Bolognese, Lasagne und Minestrone in anderen Kategorien. Eigene Rezepte anlegen,
-ändern, kopieren, löschen. Für eine neue Zutat fragt das Formular, in welchem Laden ihr sie
-kauft. Unter Einstellungen lässt sich für jede Zutat der Laden ändern.
+**Rezepte.** 63 Startgerichte (Grundstock 2, seit 11/2026): Hausmannskost, Mediterranes,
+Eintöpfe, Aufläufe, Reisgerichte und Brotzeit; Fleisch nur Hähnchen, Nudeln nur noch fünfmal.
+Eigene Rezepte anlegen, ändern, kopieren, löschen. Für eine neue Zutat fragt das Formular, in
+welchem Laden ihr sie kauft. Unter Einstellungen lässt sich für jede Zutat der Laden ändern.
 
-**Fotos und Bewertungen.** 24 der 33 Startgerichte haben ein Foto: frei lizenziert
+**Umstellung vom ersten Grundstock.** Ein Haushalt mit den 33 Gerichten von Oktober wird
+einmal umgestellt (`src/lib/grundstock.ts`): unveränderte alte Startgerichte bekommen die neue
+Fassung oder werden **aussortiert** – nicht gelöscht, alte Pläne zeigen weiter ihren Namen,
+und unter Rezepte → „Aussortiert“ lassen sie sich wieder aufnehmen. Was ihr an einem
+Startgericht geändert habt, bleibt unangetastet; erkannt wird das an Prüfwerten des alten
+Grundstocks (`startrezepteAlt.ts`). Ein nie geändertes Wochenraster bekommt das neue.
+
+**Rezept per Link übernehmen.** Unter Rezepte → „Aus Link übernehmen“ einen Link von
+Chefkoch, Lecker, EatSmarter o. ä. einfügen. Die Server-Funktion `api/rezept-import.ts` holt
+die Seite und liest die maschinenlesbaren Rezeptangaben (schema.org/Recipe), die fast alle
+Rezeptseiten für Suchmaschinen mitliefern; die App zerlegt die Zutatenzeilen in Menge,
+Einheit und Zutat (`src/lib/zutatZeile.ts`) und öffnet das Formular zum Prüfen. Unlesbare
+Zeilen sind gelb markiert. Grenzen: Seiten, die den Abruf sperren, und Seiten ohne
+Rezeptangaben lassen sich nur von Hand anlegen; das Foto der fremden Seite wird nicht
+übernommen, die Quelle steht als Link am Rezept. Die Funktion ruft nur `https`-Adressen
+außerhalb privater Netze ab (auch nach Weiterleitungen), höchstens 3 MB in 8 Sekunden, und
+speichert nichts.
+
+**Fotos und Bewertungen.** 38 der 63 Startgerichte haben ein Foto: frei lizenziert
 (CC BY, CC BY-SA), gefunden über Openverse, gehostet bei Flickr, jedes von Hand ausgewählt.
 Urheber und Lizenz stehen in der Rezeptansicht. Wo kein passendes Foto zu finden war, zeigt
 die App eine farbige Kachel mit dem Symbol der Kategorie. Im gemeinsamen Haushalt lässt sich
@@ -162,6 +186,11 @@ src/lib/bewertung.ts    Bewertungen und ihr Gewicht im Vorschlag
 src/lib/foto.ts         Eigene Fotos: verkleinern, hochladen, signierte Links
 src/lib/startfotos.ts   Fotos der Startgerichte mit Urheber und Lizenz
 src/lib/kosten.ts       Grobe Kosten je Gericht, Woche und Laden
+src/lib/grundstock.ts   Umstellung auf den neuen Grundstock, Prüfwerte
+src/lib/zutatZeile.ts   Zutatenzeilen fremder Rezepte zerlegen
+src/lib/rezeptImport.ts Übernommenes Rezept → eigenes Rezept
+src/lib/zettel.ts       Schnellknöpfe, Laden fürs freie Feld, Zettel als Text
+api/rezept-import.ts    Server-Funktion: Rezept aus einem Link lesen
 src/lib/wuensche.ts     Wünsche des Kindes: offen, eingeplant, erfüllt
 supabase/               Migration und Prüfung der Zugriffsrechte
 src/seiten/             Woche, Einkauf, Rezepte, Kind, Einstellungen
@@ -170,4 +199,5 @@ tests/                  Vitest
 
 ## Nächste Stufen
 
-1. Vorkochplan für Sonntag, Mittwochs-Nachkauf (Brot, Milch).
+1. Vorkochplan für Sonntag.
+2. Rezept direkt aus dem Teilen-Menü des Handys übernehmen (PWA-Share-Target).
