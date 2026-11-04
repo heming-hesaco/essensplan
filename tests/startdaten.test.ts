@@ -87,6 +87,6 @@ describe('Startfotos', () => {
     const eigen = { ...ohne[0], foto: { art: 'eigen' as const, pfad: 'h/x.jpg' } }
     const neu = mitStartfotos([eigen, ...ohne.slice(1)])
     expect(neu[0].foto).toEqual({ art: 'eigen', pfad: 'h/x.jpg' })
-    expect(neu.filter((r) => r.foto).length).toBeGreaterThanOrEqual(16)
+    expect(neu.filter((r) => r.foto).length).toBeGreaterThanOrEqual(38)
   })
 })
