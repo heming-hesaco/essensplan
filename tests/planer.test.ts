@@ -88,3 +88,23 @@ describe('Überblick', () => {
     expect(u.gemeinsam.map((g) => g.name)).not.toContain('Zwiebeln')
   })
 })
+
+describe('Aussortierte Gerichte', () => {
+  it('aussortierte Gerichte kommen nicht in den Vorschlag', () => {
+    const behalten = new Set<string>()
+    const rezepte = STARTREZEPTE.map((r) => {
+      if (behalten.has(r.kategorie)) return { ...r, archiviert: true }
+      behalten.add(r.kategorie)
+      return r
+    })
+    const archiv = new Set(rezepte.filter((r) => r.archiviert).map((r) => r.id))
+    for (let saat = 1; saat <= 10; saat++) {
+      const c = { rezepte, katalog: baueKatalog([]), raster: START_RASTER, monat: 10, kuerzlich: new Set<string>(), zufall: zufallAus(saat) }
+      const plan = schlageWocheVor('2026-10-24', null, c)
+      const ids = plan.tage.flatMap((t) => (t.typ === 'rezept' ? [t.rezeptId] : []))
+      expect(ids.filter((id) => archiv.has(id))).toEqual([])
+      const getauscht = tauscheTag(plan, 0, c).tage[0]
+      expect(getauscht.typ === 'rezept' && archiv.has(getauscht.rezeptId)).toBe(false)
+    }
+  })
+})

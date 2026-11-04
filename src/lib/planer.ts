@@ -100,7 +100,7 @@ function besteWahl(
   ausgeschlossen: Set<string>,
   ctx: PlanKontext,
 ): Rezept | null {
-  const frei = ctx.rezepte.filter((r) => !ausgeschlossen.has(r.id))
+  const frei = ctx.rezepte.filter((r) => !r.archiviert && !ausgeschlossen.has(r.id))
   let kandidaten = frei.filter((r) => passtInsFeld(r, feld))
   // Gibt es für ein Feld nichts mehr, lieber irgendein Gericht als ein leerer Tag.
   if (kandidaten.length === 0) kandidaten = frei

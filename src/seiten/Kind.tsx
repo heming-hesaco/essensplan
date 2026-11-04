@@ -56,7 +56,7 @@ export function KindSeite({ z, aendere }: SeitenProps) {
   const auswahl = useMemo(() => {
     const wert = (id: string) => (kindId ? z.bewertungen[id]?.[kindId]?.wert : undefined)
     return z.rezepte
-      .filter((r) => r.kinderfreundlich && (wert(r.id) !== 1 || z.wuensche[r.id] !== undefined))
+      .filter((r) => r.kinderfreundlich && !r.archiviert && (wert(r.id) !== 1 || z.wuensche[r.id] !== undefined))
       .sort((a, b) => Number(wert(b.id) === 3) - Number(wert(a.id) === 3) || a.name.localeCompare(b.name, 'de'))
   }, [z.rezepte, z.bewertungen, z.wuensche, kindId])
 

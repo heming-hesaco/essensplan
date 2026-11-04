@@ -27,7 +27,7 @@ type Ansicht = { art: 'liste' } | { art: 'detail'; id: string } | { art: 'bearbe
 export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
   const [ansicht, setAnsicht] = useState<Ansicht>({ art: 'liste' })
   const [suche, setSuche] = useState('')
-  const [kategorie, setKategorie] = useState<Kategorie | '' | 'lieblinge'>('')
+  const [kategorie, setKategorie] = useState<Kategorie | '' | 'lieblinge' | 'archiv'>('')
   const [fotoStatus, setFotoStatus] = useState('')
   const heute = heuteIso()
   const monat = monatVon(heute)
@@ -35,7 +35,8 @@ export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
   const gefiltert = useMemo(() => {
     const s = suche.trim().toLocaleLowerCase('de-DE')
     return z.rezepte
-      .filter((r) => !kategorie || (kategorie === 'lieblinge' ? istLiebling(r.id, z.bewertungen) : r.kategorie === kategorie))
+      .filter((r) => (kategorie === 'archiv') === !!r.archiviert)
+      .filter((r) => !kategorie || kategorie === 'archiv' || (kategorie === 'lieblinge' ? istLiebling(r.id, z.bewertungen) : r.kategorie === kategorie))
       .filter((r) => !s || r.name.toLocaleLowerCase('de-DE').includes(s) || r.zutaten.some((zt) => zt.name.toLocaleLowerCase('de-DE').includes(s)))
       .sort((a, b) => a.name.localeCompare(b.name, 'de'))
   }, [z.rezepte, z.bewertungen, suche, kategorie])
@@ -95,6 +96,14 @@ export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
           <h2>So geht’s</h2>
           <p className="anleitung">{r.anleitung || '—'}</p>
         </article>
+        {r.archiviert && (
+          <p className="hinweis">
+            Aussortiert: kommt nicht in den Wochenvorschlag.{' '}
+            <button className="knopf" onClick={() => aendere((alt) => ({ ...alt, rezepte: alt.rezepte.map((x) => (x.id === r.id ? { ...x, archiviert: undefined } : x)) }))}>
+              Wieder aufnehmen
+            </button>
+          </p>
+        )}
         <div className="aktionen">
           <button onClick={() => setAnsicht({ art: 'bearbeiten', rezept: structuredClone(r), neu: false })}>Bearbeiten</button>
           <button onClick={() => setAnsicht({ art: 'bearbeiten', rezept: { ...structuredClone(r), id: neueId(), name: `${r.name} (Kopie)` }, neu: true })}>Kopieren</button>
@@ -135,6 +144,9 @@ export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
         {(Object.keys(KATEGORIEN) as Kategorie[]).map((k) => (
           <button key={k} aria-pressed={kategorie === k} onClick={() => setKategorie(k)}>{KATEGORIEN[k]}</button>
         ))}
+        {z.rezepte.some((r) => r.archiviert) && (
+          <button aria-pressed={kategorie === 'archiv'} onClick={() => setKategorie('archiv')}>Aussortiert</button>
+        )}
       </div>
       <ul className="rezeptliste">
         {gefiltert.map((r) => {
@@ -158,7 +170,7 @@ export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
         })}
       </ul>
       {gefiltert.length === 0 && (
-        <p className="klein">{kategorie === 'lieblinge' ? 'Noch keine Lieblinge – ein Gericht wird Liebling, wenn es mindestens zwei von euch lecker finden und keiner es ablehnt.' : 'Nichts gefunden.'}</p>
+        <p className="klein">{kategorie === 'archiv' ? 'Nichts aussortiert.' : kategorie === 'lieblinge' ? 'Noch keine Lieblinge – ein Gericht wird Liebling, wenn es mindestens zwei von euch lecker finden und keiner es ablehnt.' : 'Nichts gefunden.'}</p>
       )}
     </>
   )

@@ -229,7 +229,7 @@ function TagKarte({ index, tag, datum, z, aendere, katalog, monat, setze, tausch
           {(Object.keys(KATEGORIEN) as Kategorie[]).map((k) => (
             <optgroup key={k} label={KATEGORIEN[k] + (feld === k ? ' ★' : '')}>
               {z.rezepte
-                .filter((r) => r.kategorie === k)
+                .filter((r) => r.kategorie === k && !r.archiviert)
                 .sort((a, b) => a.name.localeCompare(b.name, 'de'))
                 .map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
             </optgroup>
