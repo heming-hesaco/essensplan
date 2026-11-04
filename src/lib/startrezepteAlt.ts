@@ -1,0 +1,40 @@
+/**
+ * Prüfwerte der 33 Startgerichte des ersten Grundstocks (bis 11/2026), erzeugt mit
+ * `pruefwert`. Daran erkennt der Übergang, welche alten Startgerichte ein Haushalt nie
+ * geändert hat. Nicht von Hand ändern.
+ */
+export const ALTE_STARTREZEPTE: Record<string, string> = {
+  'spaghetti-bolognese': 'b4019272',
+  'nudeln-gemuesesauce': 'fa424f15',
+  'kuerbis-sahne-pasta': 'ad44e954',
+  'lachs-spinat-tagliatelle': '701bdd1d',
+  'makkaroni-kaese-brokkoli': '6b7affa3',
+  'pesto-nudeln-tomaten': 'ae46b130',
+  'lauch-schinken-nudeln': 'bfa3d933',
+  'hackbaellchen-tomatensauce': 'af8bdde5',
+  'asia-gemuesenudeln': '11914935',
+  'linsen-bolognese': '11a5d246',
+  'chili-sin-carne': 'a07684bb',
+  'kichererbsen-curry': '798e8250',
+  'linsensuppe-wuerstchen': 'b6dbc8a1',
+  'bohnen-wraps': 'ebeb4c98',
+  'fischstaebchen-pueree': 'b9ec664c',
+  'ofenlachs-kartoffeln': 'c02c8043',
+  'seelachs-reis-moehren': '81832595',
+  'thunfisch-nudeln': '40bc1647',
+  'ofengemuese-feta': '89bb9bd2',
+  'nudelauflauf-gemuese': '059bacda',
+  'haehnchen-blech': '187fb623',
+  'lauch-quiche': '3dba8aaa',
+  'kuerbissuppe': '7a67ab12',
+  'minestrone': 'e07460c7',
+  'bratkartoffeln-spiegelei': 'c3586811',
+  'kartoffelpuffer-apfelmus': '878376ec',
+  'kohlrabi-rahm': 'b54bf871',
+  'wirsing-eintopf': '10384623',
+  'pizza-selbst-belegen': 'c16c29d1',
+  'lasagne': 'ca9b25a5',
+  'apfelpfannkuchen': 'd32c9c15',
+  'burger-selbstgemacht': '5b433a9b',
+  'haehnchen-geschnetzeltes': '6749b29a',
+}
