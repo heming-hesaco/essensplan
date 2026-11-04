@@ -4,6 +4,7 @@ import { istLiebling } from '../lib/bewertung'
 import { ladeFotoHoch, verkleinere } from '../lib/foto'
 import { gerichtKosten, zeigeEuro } from '../lib/kosten'
 import { merkmale } from '../lib/planer'
+import { alsRezept, holeImport } from '../lib/rezeptImport'
 import { STARTREZEPTE } from '../lib/startrezepte'
 import { supabase } from '../lib/supabase'
 import { neueId } from '../lib/speicher'
@@ -22,7 +23,11 @@ interface Props extends SeitenProps {
   haushaltId: string | null
 }
 
-type Ansicht = { art: 'liste' } | { art: 'detail'; id: string } | { art: 'bearbeiten'; rezept: Rezept; neu: boolean }
+type Ansicht =
+  | { art: 'liste' }
+  | { art: 'detail'; id: string }
+  | { art: 'bearbeiten'; rezept: Rezept; neu: boolean; pruefen?: string[] }
+  | { art: 'import' }
 
 export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
   const [ansicht, setAnsicht] = useState<Ansicht>({ art: 'liste' })
@@ -45,6 +50,7 @@ export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
     return (
       <RezeptFormular
         start={ansicht.rezept}
+        pruefen={ansicht.pruefen}
         katalog={katalog}
         abbrechen={() => setAnsicht(ansicht.neu ? { art: 'liste' } : { art: 'detail', id: ansicht.rezept.id })}
         speichern={(rezept, neueZutaten) => {
@@ -59,6 +65,16 @@ export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
     )
   }
 
+  if (ansicht.art === 'import') {
+    return (
+      <ImportFormular
+        katalog={katalog}
+        abbrechen={() => setAnsicht({ art: 'liste' })}
+        weiter={(rezept, pruefen) => setAnsicht({ art: 'bearbeiten', rezept, neu: true, pruefen })}
+      />
+    )
+  }
+
   if (ansicht.art === 'detail') {
     const r = z.rezepte.find((x) => x.id === ansicht.id)
     if (!r) return <button onClick={() => setAnsicht({ art: 'liste' })}>← Zurück</button>
@@ -68,6 +84,7 @@ export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
         <article className="karte detail">
           <GerichtBild rezept={r} klasse="detail-bild" />
           <Bildnachweis foto={r.foto} />
+          {r.quelle && <QuellenLink url={r.quelle} />}
           <h1>{r.name}</h1>
           <p className="marken">
             <span className="marke">{KATEGORIEN[r.kategorie]}</span>
@@ -126,16 +143,19 @@ export function Rezepte({ z, aendere, katalog, haushaltId }: Props) {
     <>
       <header className="kopf">
         <h1>Rezepte</h1>
-        <button
-          className="haupt"
-          onClick={() => setAnsicht({
-            art: 'bearbeiten',
-            neu: true,
-            rezept: { id: neueId(), name: '', kategorie: 'nudeln', minuten: 30, portionen: 4, kinderfreundlich: true, zutaten: [{ name: '', menge: 1, einheit: 'Stück' }], anleitung: '' },
-          })}
-        >
-          + Neues Rezept
-        </button>
+        <div className="aktionen">
+          <button onClick={() => setAnsicht({ art: 'import' })}>🔗 Aus Link übernehmen</button>
+          <button
+            className="haupt"
+            onClick={() => setAnsicht({
+              art: 'bearbeiten',
+              neu: true,
+              rezept: { id: neueId(), name: '', kategorie: 'gemuese', minuten: 30, portionen: 4, kinderfreundlich: true, zutaten: [{ name: '', menge: 1, einheit: 'Stück' }], anleitung: '' },
+            })}
+          >
+            + Neues Rezept
+          </button>
+        </div>
       </header>
       <input className="suche" type="search" placeholder="Suchen nach Gericht oder Zutat" value={suche} onChange={(e) => setSuche(e.target.value)} aria-label="Rezepte durchsuchen" />
       <div className="chips" role="group" aria-label="Kategorie">
@@ -181,10 +201,12 @@ interface FormProps {
   katalog: Katalog
   abbrechen: () => void
   speichern: (r: Rezept, neueZutaten: ZutatInfo[]) => void
+  /** Zutatenzeilen aus einem Import, die sich nicht zerlegen ließen – bis zur Änderung markiert. */
+  pruefen?: string[]
 }
 
 /** Für unbekannte Zutaten fragt das Formular, wo sie gekauft werden. */
-function RezeptFormular({ start, katalog, abbrechen, speichern }: FormProps) {
+function RezeptFormular({ start, katalog, abbrechen, speichern, pruefen = [] }: FormProps) {
   const [r, setR] = useState<Rezept>(start)
   const [neuInfo, setNeuInfo] = useState<Record<string, { laden: Laden; abteilung: Abteilung }>>({})
   const [fehler, setFehler] = useState('')
@@ -232,8 +254,11 @@ function RezeptFormular({ start, katalog, abbrechen, speichern }: FormProps) {
         <fieldset>
           <legend>Zutaten</legend>
           <datalist id="zutatennamen">{namen.map((n) => <option key={n} value={n} />)}</datalist>
+          {r.zutaten.some((zt) => pruefen.includes(zt.name)) && (
+            <p className="hinweis">Gelb markierte Zeilen ließen sich nicht lesen – bitte Menge und Zutat prüfen.</p>
+          )}
           {r.zutaten.map((zt, i) => (
-            <div key={i} className="zutat-zeile">
+            <div key={i} className={`zutat-zeile${pruefen.includes(zt.name) ? ' pruefen' : ''}`}>
               <input aria-label="Zutat" list="zutatennamen" placeholder="Zutat" value={zt.name} onChange={(e) => setzeZutat(i, { name: e.target.value })} />
               <input aria-label="Menge" type="number" min={0} step="any" value={zt.menge} onChange={(e) => setzeZutat(i, { menge: Number(e.target.value) })} />
               <select aria-label="Einheit" value={zt.einheit} onChange={(e) => setzeZutat(i, { einheit: e.target.value as Einheit })}>
@@ -334,5 +359,63 @@ function KostenMarke({ rezept, katalog, z }: { rezept: Rezept; katalog: Katalog;
     <span title={k.ohnePreis.length ? `Ohne Preis: ${k.ohnePreis.join(', ')}` : 'Grobe Schätzung, ohne Grundvorrat'}>
       {zeigeEuro(k.euro)} für euch{k.ohnePreis.length > 0 ? ' +' : ''}
     </span>
+  )
+}
+
+/** Link einfügen, Rezept holen, ins Formular übergeben. Scheitert es, geht es von Hand weiter. */
+function ImportFormular({ katalog, abbrechen, weiter }: { katalog: Katalog; abbrechen: () => void; weiter: (r: Rezept, pruefen: string[]) => void }) {
+  const [link, setLink] = useState('')
+  const [laeuft, setLaeuft] = useState(false)
+  const [fehler, setFehler] = useState('')
+
+  const holen = async () => {
+    setLaeuft(true)
+    setFehler('')
+    const antwort = await holeImport(link)
+    setLaeuft(false)
+    if (!antwort.ok) return setFehler(antwort.fehler)
+    const { rezept, unsicher } = alsRezept(antwort.rezept, katalog, neueId())
+    weiter(rezept, unsicher.map((i) => rezept.zutaten[i].name))
+  }
+
+  const vonHand = () =>
+    weiter({ id: neueId(), name: '', kategorie: 'gemuese', minuten: 30, portionen: 4, kinderfreundlich: false, zutaten: [{ name: '', menge: 1, einheit: 'Stück' }], anleitung: '', quelle: link.trim() || undefined }, [])
+
+  return (
+    <>
+      <header className="kopf"><h1>Rezept aus Link</h1></header>
+      <form className="karte formular" onSubmit={(e) => { e.preventDefault(); if (link.trim()) holen() }}>
+        <p className="klein">
+          Link einer Rezeptseite einfügen, etwa von Chefkoch, Lecker oder EatSmarter. Die App liest
+          Zutaten und Zubereitung aus; ihr prüft das Rezept und speichert es in eurer Sammlung.
+        </p>
+        <label>Link<input type="url" inputMode="url" placeholder="https://…" value={link} onChange={(e) => setLink(e.target.value)} required /></label>
+        <div className="aktionen">
+          <button type="submit" className="haupt" disabled={laeuft || !link.trim()}>{laeuft ? 'Wird geholt …' : 'Holen'}</button>
+          <button type="button" onClick={abbrechen}>Abbrechen</button>
+        </div>
+        {fehler && (
+          <div className="warnung" role="alert">
+            <p>{fehler}</p>
+            <button type="button" onClick={vonHand}>Von Hand anlegen</button>
+          </div>
+        )}
+      </form>
+    </>
+  )
+}
+
+/** „Quelle: chefkoch.de“ – verlinkt, ohne dass die fremde Seite erfährt, woher der Klick kommt. */
+function QuellenLink({ url }: { url: string }) {
+  let domain = url
+  try {
+    domain = new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return null
+  }
+  return (
+    <p className="nachweis">
+      Quelle: <a href={url} target="_blank" rel="noreferrer">{domain}</a>
+    </p>
   )
 }
