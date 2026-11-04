@@ -1,4 +1,5 @@
 import { STARTFOTOS } from './startfotos'
+import { START_SCHNELLPOSTEN } from './zettel'
 import { START_FRUEHSTUECK, STARTREZEPTE } from './startrezepte'
 import type {
   Bewertung, Einstellungen, ExtraPosten, Feld, Grundposten, Plan, Rezept, ZutatInfo,
@@ -43,7 +44,9 @@ export function startzustand(): Zustand {
     rezepte: structuredClone(STARTREZEPTE),
     katalog: [],
     raster: [...START_RASTER],
-    einstellungen: { portionen: 2.5, mittagsportionen: 2, personen: structuredClone(START_PERSONEN) },
+    einstellungen: {
+      portionen: 2.5, mittagsportionen: 2, personen: structuredClone(START_PERSONEN), schnellposten: structuredClone(START_SCHNELLPOSTEN),
+    },
     fruehstueck: structuredClone(START_FRUEHSTUECK),
     plaene: {},
     abgehakt: {},
