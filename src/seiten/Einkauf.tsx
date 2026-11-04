@@ -4,6 +4,8 @@ import { erstelleListe, nachLaden, zeigeMenge, type Posten } from '../lib/einkau
 import { postenPreis, zeigeEuro } from '../lib/kosten'
 import { neueId } from '../lib/speicher'
 import { ABTEILUNGEN, LAEDEN, type Laden } from '../lib/typen'
+import { kurzDatum, plusTage } from '../lib/woche'
+import { START_SCHNELLPOSTEN, ladenFuer, schalteSchnellposten, schnellStand, zettelText } from '../lib/zettel'
 import type { Katalog } from '../lib/zutaten'
 import { WochenKopf } from './WochenKopf'
 
@@ -27,6 +29,12 @@ export function Einkauf({ z, aendere, katalog, woche, setWoche }: Props) {
   const [neu, setNeu] = useState('')
   const [neuLaden, setNeuLaden] = useState<Laden>('aldi')
   const [geteilt, setGeteilt] = useState('')
+  const [hinweis, setHinweis] = useState('')
+  const schnell = z.einstellungen.schnellposten ?? START_SCHNELLPOSTEN
+  const vorschlaege = useMemo(
+    () => [...new Set([...schnell.map((s) => s.name), ...[...katalog.values()].filter((i) => !i.vorrat).map((i) => i.name)])].sort((a, b) => a.localeCompare(b, 'de')),
+    [schnell, katalog],
+  )
 
   const umschalten = (feld: 'abgehakt' | 'vorratLeer', schluessel: string) =>
     aendere((alt) => {
@@ -38,22 +46,38 @@ export function Einkauf({ z, aendere, katalog, woche, setWoche }: Props) {
 
   const setzeExtras = (liste: typeof extras) => aendere((alt) => ({ ...alt, extras: { ...alt.extras, [woche]: liste } }))
 
-  const teile = async (laden: Laden) => {
+  /** Über das Teilen-Menü des Handys (WhatsApp, SMS …), sonst in die Zwischenablage. */
+  const verschicke = async (titel: string, text: string) => {
+    try {
+      if (navigator.share) await navigator.share({ title: titel, text })
+      else {
+        await navigator.clipboard.writeText(text)
+        setGeteilt(`${titel}: kopiert`)
+      }
+    } catch {
+      // Teilen abgebrochen – nichts zu tun.
+    }
+  }
+
+  const teile = (laden: Laden) => {
     const name = LAEDEN.find((l) => l.id === laden)!.name
     const zeilen = [
       ...zuKaufen.filter((p) => p.laden === laden && !abgehakt.has(p.schluessel)).map((p) => `• ${p.name} – ${zeigeMenge(p.menge, p.einheit)}`),
       ...extras.filter((e) => e.laden === laden && !abgehakt.has(e.id)).map((e) => `• ${e.text}`),
     ]
-    const text = `${name}\n${zeilen.join('\n')}`
-    try {
-      if (navigator.share) await navigator.share({ title: `Einkauf ${name}`, text })
-      else {
-        await navigator.clipboard.writeText(text)
-        setGeteilt(`${name}: Liste kopiert`)
-      }
-    } catch {
-      // Teilen abgebrochen – nichts zu tun.
+    return verschicke(`Einkauf ${name}`, `${name}\n${zeilen.join('\n')}`)
+  }
+
+  const teileAlles = () =>
+    verschicke('Einkaufszettel', zettelText(`${kurzDatum(woche)} – ${kurzDatum(plusTage(woche, 6))}`, zuKaufen, extras, abgehakt))
+
+  const tippe = (s: { name: string; laden: Laden }) => {
+    if (schnellStand(s.name, zuKaufen, extras) === 'plan') {
+      setHinweis(`${s.name} steht schon über den Wochenplan auf dem Zettel.`)
+      return
     }
+    setHinweis('')
+    setzeExtras(schalteSchnellposten(extras, s, neueId))
   }
 
   if (!plan) {
@@ -81,6 +105,50 @@ export function Einkauf({ z, aendere, katalog, woche, setWoche }: Props) {
           <span className="klein">grob geschätzt, für das, was ihr diese Woche verbraucht – ohne Grundvorrat und eigene Posten.</span>
         </p>
       )}
+
+      <section className="karte schnell">
+        <div className="laden-kopf">
+          <h2>Schnell dazu</h2>
+          <button onClick={teileAlles}>Ganzen Zettel teilen</button>
+        </div>
+        <div className="schnellknoepfe" role="group" aria-label="Grundnahrungsmittel">
+          {schnell.map((s) => {
+            const stand = schnellStand(s.name, zuKaufen, extras)
+            return (
+              <button key={s.name} aria-pressed={stand !== 'frei'} className={stand === 'plan' ? 'aus-plan' : ''} onClick={() => tippe(s)}>
+                {stand !== 'frei' && '✓ '}{s.name}
+              </button>
+            )
+          })}
+        </div>
+        {hinweis && <p className="klein" role="status">{hinweis}</p>}
+        <form
+          className="zeile"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!neu.trim()) return
+            setzeExtras([...extras, { id: neueId(), text: neu.trim(), laden: neuLaden }])
+            setNeu('')
+          }}
+        >
+          <datalist id="zettel-vorschlaege">{vorschlaege.map((v) => <option key={v} value={v} />)}</datalist>
+          <input
+            aria-label="Weiterer Posten"
+            list="zettel-vorschlaege"
+            placeholder="Weiteres, z. B. 2 Gurken"
+            value={neu}
+            onChange={(e) => {
+              setNeu(e.target.value)
+              const laden = ladenFuer(e.target.value, katalog)
+              if (laden) setNeuLaden(laden)
+            }}
+          />
+          <select aria-label="Laden" value={neuLaden} onChange={(e) => setNeuLaden(e.target.value as Laden)}>
+            {LAEDEN.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+          </select>
+          <button type="submit">Hinzufügen</button>
+        </form>
+      </section>
 
       {vorrat.length > 0 && (
         <details className="karte">
@@ -155,21 +223,6 @@ export function Einkauf({ z, aendere, katalog, woche, setWoche }: Props) {
       })}
       {geteilt && <p className="klein" role="status">{geteilt}</p>}
 
-      <form
-        className="karte zeile"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (!neu.trim()) return
-          setzeExtras([...extras, { id: neueId(), text: neu.trim(), laden: neuLaden }])
-          setNeu('')
-        }}
-      >
-        <input aria-label="Weiterer Posten" placeholder="Weiteres, z. B. Spülmittel" value={neu} onChange={(e) => setNeu(e.target.value)} />
-        <select aria-label="Laden" value={neuLaden} onChange={(e) => setNeuLaden(e.target.value as Laden)}>
-          {LAEDEN.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-        </select>
-        <button type="submit">Hinzufügen</button>
-      </form>
 
       {abgehakt.size > 0 && (
         <button className="still" onClick={() => aendere((alt) => ({ ...alt, abgehakt: { ...alt.abgehakt, [woche]: [] } }))}>

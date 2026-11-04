@@ -5,6 +5,7 @@ import { EINHEITEN, FELDER, LAEDEN, WOCHENTAGE, type Einheit, type Feld, type La
 import { heuteIso } from '../lib/woche'
 import type { Gemeinsam } from '../lib/useGemeinsam'
 import { zutatSchluessel, type Katalog } from '../lib/zutaten'
+import { START_SCHNELLPOSTEN, ladenFuer } from '../lib/zettel'
 import { GemeinsamBereich } from './Gemeinsam'
 
 interface Props extends SeitenProps {
@@ -16,6 +17,10 @@ export function Einstellungen({ z, aendere, katalog, gemeinsam }: Props) {
   const datei = useRef<HTMLInputElement>(null)
   const [meldung, setMeldung] = useState('')
   const [zutatSuche, setZutatSuche] = useState('')
+  const [neuerKnopf, setNeuerKnopf] = useState('')
+  const schnell = z.einstellungen.schnellposten ?? START_SCHNELLPOSTEN
+  const setzeSchnell = (liste: typeof schnell) =>
+    aendere((alt) => ({ ...alt, einstellungen: { ...alt.einstellungen, schnellposten: liste } }))
 
   const zutaten = useMemo(() => {
     const s = zutatSuche.trim().toLocaleLowerCase('de-DE')
@@ -119,6 +124,33 @@ export function Einstellungen({ z, aendere, katalog, gemeinsam }: Props) {
             </select>
           </label>
         ))}
+      </section>
+
+      <section className="karte formular">
+        <h2>Schnellknöpfe auf dem Einkaufszettel</h2>
+        <p className="klein">Was ihr oft nachkauft – ein Tippen auf dem Zettel setzt es drauf.</p>
+        {schnell.map((k) => (
+          <div key={k.name} className="zeile-label schnell-zeile">
+            <span>{k.name}</span>
+            <select aria-label={`Laden für ${k.name}`} value={k.laden} onChange={(e) => setzeSchnell(schnell.map((x) => (x.name === k.name ? { ...x, laden: e.target.value as Laden } : x)))}>
+              {LAEDEN.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+            </select>
+            <button className="still" aria-label={`${k.name} entfernen`} onClick={() => setzeSchnell(schnell.filter((x) => x.name !== k.name))}>✕</button>
+          </div>
+        ))}
+        <form
+          className="zeile"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const name = neuerKnopf.trim()
+            if (!name || schnell.some((x) => x.name.toLocaleLowerCase('de-DE') === name.toLocaleLowerCase('de-DE'))) return
+            setzeSchnell([...schnell, { name, laden: ladenFuer(name, katalog) ?? 'aldi' }])
+            setNeuerKnopf('')
+          }}
+        >
+          <input aria-label="Neuer Schnellknopf" placeholder="z. B. Zahnpasta" value={neuerKnopf} onChange={(e) => setNeuerKnopf(e.target.value)} maxLength={40} />
+          <button type="submit">Hinzufügen</button>
+        </form>
       </section>
 
       <section className="karte formular">

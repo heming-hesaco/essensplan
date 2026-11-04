@@ -284,3 +284,12 @@ button:disabled { opacity: 0.5; cursor: default; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .zutat-zeile.pruefen input:first-child { background: #2e2814; } }
 :root[data-theme='dark'] .zutat-zeile.pruefen input:first-child { background: #2e2814; }
 .warnung p { margin: 0 0 8px; }
+
+/* Einkaufszettel: Schnellknöpfe */
+.schnell { display: flex; flex-direction: column; gap: 10px; }
+.schnell h2 { margin: 0; }
+.schnellknoepfe { display: flex; flex-wrap: wrap; gap: 6px; }
+.schnellknoepfe button { min-height: 40px; padding: 6px 12px; border-radius: 999px; font-size: 0.92rem; }
+.schnellknoepfe button.aus-plan { color: var(--gedaempft); }
+.schnell-zeile > span { flex: 1; }
+.schnell-zeile select { flex: none; width: 50%; }
