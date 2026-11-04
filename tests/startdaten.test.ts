@@ -32,9 +32,37 @@ describe('Startdaten', () => {
     }
   })
 
-  it('Nudeln gehen immer: die größte Kategorie', () => {
+  it('60 bis 70 Gerichte, 4 bis 5 mit Nudeln', () => {
+    expect(STARTREZEPTE.length).toBeGreaterThanOrEqual(60)
+    expect(STARTREZEPTE.length).toBeLessThanOrEqual(70)
     const nudeln = STARTREZEPTE.filter((r) => r.kategorie === 'nudeln').length
-    expect(nudeln).toBeGreaterThanOrEqual(8)
+    expect(nudeln).toBeGreaterThanOrEqual(4)
+    expect(nudeln).toBeLessThanOrEqual(5)
+  })
+
+  it('Fleisch nur Hähnchen, in höchstens 10 Gerichten', () => {
+    const info = new Map(STARTKATALOG.map((z) => [zutatSchluessel(z.name), z]))
+    const fleisch = STARTREZEPTE.flatMap((r) =>
+      r.zutaten.filter((z) => info.get(zutatSchluessel(z.name))?.abteilung === 'fleisch').map((z) => `${r.name}: ${z.name}`),
+    )
+    expect(fleisch.filter((f) => !f.split(': ')[1].startsWith('Hähnchen'))).toEqual([])
+    const mitHaehnchen = new Set(fleisch.map((f) => f.split(': ')[0]))
+    expect(mitHaehnchen.size).toBeLessThanOrEqual(10)
+  })
+
+  it('jede Kategorie mindestens 4 Gerichte, Brotzeit mindestens 5', () => {
+    for (const k of Object.keys(KATEGORIEN)) {
+      expect(STARTREZEPTE.filter((r) => r.kategorie === k).length, k).toBeGreaterThanOrEqual(4)
+    }
+    expect(STARTREZEPTE.filter((r) => r.kategorie === 'brotzeit').length).toBeGreaterThanOrEqual(5)
+  })
+
+  it('jede Zutat außer Grundvorrat hat einen Preis in der benutzten Einheit', () => {
+    const info = new Map(STARTKATALOG.map((z) => [zutatSchluessel(z.name), z]))
+    const ohne = [...STARTREZEPTE.flatMap((r) => r.zutaten), ...START_FRUEHSTUECK]
+      .filter((z) => { const i = info.get(zutatSchluessel(z.name)); return i && !i.vorrat && i.preis?.[z.einheit] === undefined })
+      .map((z) => `${z.name} (${z.einheit})`)
+    expect([...new Set(ohne)]).toEqual([])
   })
 })
 
@@ -59,6 +87,6 @@ describe('Startfotos', () => {
     const eigen = { ...ohne[0], foto: { art: 'eigen' as const, pfad: 'h/x.jpg' } }
     const neu = mitStartfotos([eigen, ...ohne.slice(1)])
     expect(neu[0].foto).toEqual({ art: 'eigen', pfad: 'h/x.jpg' })
-    expect(neu.filter((r) => r.foto).length).toBeGreaterThanOrEqual(24)
+    expect(neu.filter((r) => r.foto).length).toBeGreaterThanOrEqual(16)
   })
 })

@@ -39,10 +39,10 @@ describe('Einkaufsliste', () => {
   })
 
   it('ordnet den Läden zu und markiert Vorrat', () => {
-    const liste = erstelleListe(plan(['spaghetti-bolognese', true]), STARTREZEPTE, katalog, einst, [])
+    const liste = erstelleListe(plan(['nudeln-gemuesesauce', true]), STARTREZEPTE, katalog, einst, [])
     const finde = (n: string) => liste.find((p) => p.name === n)!
     expect(finde('Möhren').laden).toBe('markt')
-    expect(finde('Spaghetti').laden).toBe('aldi')
+    expect(finde('Fusilli').laden).toBe('aldi')
     expect(finde('Olivenöl').vorrat).toBe(true)
     expect(nachLaden(liste, 'markt').map((a) => a.abteilung)).toEqual(['gemuese'])
   })

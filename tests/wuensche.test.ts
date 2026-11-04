@@ -42,14 +42,14 @@ describe('Wünsche', () => {
     }
   })
 
-  it('ein gewünschtes Nudelgericht landet am Nudeltag', () => {
+  it('ein gewünschtes Eintopfgericht landet am Eintopftag', () => {
     for (let saat = 1; saat <= 15; saat++) {
       const p = schlageWocheVor(W, null, {
         rezepte: STARTREZEPTE, katalog: baueKatalog([]), raster: START_RASTER, monat: 10,
-        kuerzlich: new Set(), zufall: zufallAus(saat), wuensche: new Set(['lauch-schinken-nudeln']),
+        kuerzlich: new Set(), zufall: zufallAus(saat), wuensche: new Set(['erbsensuppe']),
       })
       const montag = p.tage[2]
-      expect(montag.typ === 'rezept' && montag.rezeptId).toBe('lauch-schinken-nudeln')
+      expect(montag.typ === 'rezept' && montag.rezeptId).toBe('erbsensuppe')
     }
   })
 

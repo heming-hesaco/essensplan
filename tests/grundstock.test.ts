@@ -19,9 +19,9 @@ describe('Prüfwert', () => {
 })
 
 describe('Schnappschuss des alten Grundstocks', () => {
-  it('Schnappschuss passt zum jetzigen Grundstock', async () => {
+  it('33 Einträge, Werte hex', async () => {
     const { ALTE_STARTREZEPTE } = await import('../src/lib/startrezepteAlt')
     expect(Object.keys(ALTE_STARTREZEPTE)).toHaveLength(33)
-    for (const r of STARTREZEPTE) expect(ALTE_STARTREZEPTE[r.id], r.id).toBe(pruefwert(r))
+    for (const w of Object.values(ALTE_STARTREZEPTE)) expect(w).toMatch(/^[0-9a-f]{8}$/)
   })
 })

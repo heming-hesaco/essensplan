@@ -45,6 +45,14 @@ export const STARTKATALOG: ZutatInfo[] = [
   z('Champignons', 'markt', 'gemuese', 'kurz', GANZJAHR),
   z('Süßkartoffeln', 'markt', 'gemuese', 'lang', NIE),
   z('Petersilie', 'markt', 'gemuese', 'kurz', [4, 5, 6, 7, 8, 9, 10]),
+  z('Schnittlauch', 'markt', 'gemuese', 'kurz', [3, 4, 5, 6, 7, 8, 9, 10]),
+  z('Dill', 'markt', 'gemuese', 'kurz', [5, 6, 7, 8, 9]),
+  z('Basilikum', 'markt', 'gemuese', 'kurz', [6, 7, 8, 9]),
+  z('Radieschen', 'markt', 'gemuese', 'kurz', [4, 5, 6, 7, 8, 9, 10]),
+  z('Aubergine', 'markt', 'gemuese', 'mittel', [7, 8, 9, 10]),
+  z('Blumenkohl', 'markt', 'gemuese', 'mittel', [6, 7, 8, 9, 10, 11]),
+  z('Knollensellerie', 'markt', 'gemuese', 'lang', [1, 2, 3, 9, 10, 11, 12]),
+  z('Feldsalat', 'markt', 'gemuese', 'kurz', [1, 2, 3, 10, 11, 12]),
   // Wochenmarkt: Obst
   z('Äpfel', 'markt', 'obst', 'lang', [1, 2, 3, 4, 8, 9, 10, 11, 12]),
   z('Birnen', 'markt', 'obst', 'mittel', [8, 9, 10, 11, 12]),
@@ -53,6 +61,8 @@ export const STARTKATALOG: ZutatInfo[] = [
   // Wochenmarkt: Brot, Käse, Eier
   z('Bauernbrot', 'markt', 'brot', 'mittel'),
   z('Baguette', 'markt', 'brot', 'kurz'),
+  z('Vollkornbrot', 'markt', 'brot', 'mittel'),
+  z('Fladenbrot', 'markt', 'brot', 'kurz'),
   z('Bergkäse', 'markt', 'kaese', 'lang'),
   z('Gouda', 'markt', 'kaese', 'lang'),
   z('Eier', 'markt', 'eier', 'lang'),
@@ -66,6 +76,9 @@ export const STARTKATALOG: ZutatInfo[] = [
   z('Mozzarella', 'aldi', 'milch', 'mittel'),
   z('Parmesan', 'aldi', 'milch', 'lang'),
   z('Reibekäse', 'aldi', 'milch', 'lang'),
+  z('Quark', 'aldi', 'milch', 'mittel'),
+  z('Frischkäse', 'aldi', 'milch', 'mittel'),
+  z('Camembert', 'aldi', 'milch', 'mittel'),
   z('Tortilla-Wraps', 'aldi', 'brot', 'lang'),
   z('Burgerbrötchen', 'aldi', 'brot', 'mittel'),
   // Aldi: Fleisch und Wurst
@@ -80,6 +93,8 @@ export const STARTKATALOG: ZutatInfo[] = [
   z('Seelachsfilet (TK)', 'aldi', 'tk', 'lang'),
   z('Erbsen (TK)', 'aldi', 'tk', 'lang'),
   z('Blattspinat (TK)', 'aldi', 'tk', 'lang'),
+  z('Grüne Bohnen (TK)', 'aldi', 'tk', 'lang'),
+  z('Garnelen (TK)', 'aldi', 'tk', 'lang'),
   // Aldi: Trockenes
   z('Spaghetti', 'aldi', 'trocken', 'lang'),
   z('Vollkornspaghetti', 'aldi', 'trocken', 'lang'),
@@ -93,6 +108,12 @@ export const STARTKATALOG: ZutatInfo[] = [
   z('Rote Linsen', 'aldi', 'trocken', 'lang'),
   z('Tellerlinsen', 'aldi', 'trocken', 'lang'),
   z('Haferflocken', 'aldi', 'trocken', 'lang'),
+  z('Risottoreis', 'aldi', 'trocken', 'lang'),
+  z('Milchreis', 'aldi', 'trocken', 'lang'),
+  z('Bulgur', 'aldi', 'trocken', 'lang'),
+  z('Couscous', 'aldi', 'trocken', 'lang'),
+  z('Schälerbsen', 'aldi', 'trocken', 'lang'),
+  z('Paniermehl', 'aldi', 'trocken', 'lang'),
   // Aldi: Dosen und Gläser
   z('Passierte Tomaten', 'aldi', 'konserve', 'lang'),
   z('Gehackte Tomaten', 'aldi', 'konserve', 'lang'),
@@ -103,6 +124,8 @@ export const STARTKATALOG: ZutatInfo[] = [
   z('Thunfisch', 'aldi', 'konserve', 'lang'),
   z('Pesto', 'aldi', 'konserve', 'lang'),
   z('Apfelmus', 'aldi', 'konserve', 'lang'),
+  z('Weiße Bohnen', 'aldi', 'konserve', 'lang'),
+  z('Oliven', 'aldi', 'konserve', 'lang'),
   // Edeka: Besonderes
   z('Mie-Nudeln', 'edeka', 'trocken', 'lang'),
   z('Frischer Salbei', 'edeka', 'gemuese', 'kurz'),
@@ -124,6 +147,8 @@ export const STARTKATALOG: ZutatInfo[] = [
   vorrat('Trockenhefe'),
   vorrat('Marmelade'),
   vorrat('Honig'),
+  vorrat('Essig'),
+  vorrat('Senf'),
 ]
 
 /** Symbole der Zutaten. Was hier fehlt, bekommt das Symbol seiner Abteilung. */
@@ -142,6 +167,10 @@ const BILDER: Record<string, string> = {
   Reis: '🍚', 'Rote Linsen': '🫘', Tellerlinsen: '🫘', Haferflocken: '🥣', 'Passierte Tomaten': '🥫',
   'Gehackte Tomaten': '🥫', Kidneybohnen: '🫘', Kichererbsen: '🫘', Mais: '🌽', Kokosmilch: '🥥',
   Thunfisch: '🐟', Pesto: '🌿', Apfelmus: '🍎', 'Mie-Nudeln': '🍜', 'Frischer Salbei': '🌿',
+  Schnittlauch: '🌿', Dill: '🌿', Basilikum: '🌿', Aubergine: '🍆', Blumenkohl: '🥦', Feldsalat: '🥬',
+  Vollkornbrot: '🍞', Fladenbrot: '🫓', Quark: '🥛', Frischkäse: '🧀', Camembert: '🧀',
+  'Grüne Bohnen (TK)': '🫛', 'Garnelen (TK)': '🦐', Risottoreis: '🍚', Milchreis: '🍚', Bulgur: '🌾',
+  Couscous: '🌾', Schälerbsen: '🫛', 'Weiße Bohnen': '🫘', Oliven: '🫒',
   Salz: '🧂', Olivenöl: '🫒', Rapsöl: '🫗', Mehl: '🌾', Zucker: '🍬', Honig: '🍯', Marmelade: '🍓',
 }
 
@@ -178,6 +207,12 @@ const PREISE: Record<string, Partial<Record<Einheit, number>>> = {
   'Passierte Tomaten': { g: 1.2 }, 'Gehackte Tomaten': { Dose: 0.7 }, Kidneybohnen: { Dose: 0.8 },
   Kichererbsen: { Dose: 0.8 }, Mais: { Dose: 0.9 }, Kokosmilch: { Dose: 1.3 }, Thunfisch: { Dose: 1.7 },
   Pesto: { Glas: 1.8 }, Apfelmus: { Glas: 1.1 }, 'Mie-Nudeln': { g: 8 }, 'Frischer Salbei': { Bund: 1.5 },
+  Schnittlauch: { Bund: 1 }, Dill: { Bund: 1 }, Basilikum: { Bund: 1.5 }, Radieschen: { Bund: 1 },
+  Aubergine: { Stück: 1.2 }, Blumenkohl: { Stück: 2.5 }, Knollensellerie: { Stück: 1.5 }, Feldsalat: { g: 12 },
+  Vollkornbrot: { Stück: 4 }, Fladenbrot: { Stück: 2 }, Quark: { g: 3 }, Frischkäse: { g: 6 }, Camembert: { g: 10 },
+  'Grüne Bohnen (TK)': { g: 3 }, 'Garnelen (TK)': { g: 20 }, Risottoreis: { g: 3.5 }, Milchreis: { g: 2.5 },
+  Bulgur: { g: 3 }, Couscous: { g: 3 }, Schälerbsen: { g: 2.5 }, Paniermehl: { g: 2 },
+  'Weiße Bohnen': { Dose: 0.8 }, Oliven: { Glas: 1.5 },
 }
 
 for (const info of STARTKATALOG) {

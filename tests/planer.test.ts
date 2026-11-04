@@ -28,7 +28,8 @@ describe('Wochenvorschlag', () => {
     const gewaehlt = ids(plan)
     expect(gewaehlt).toHaveLength(7)
     expect(new Set(gewaehlt).size).toBe(7)
-    expect(rezept(gewaehlt[2]).kategorie).toBe('nudeln')
+    expect(rezept(gewaehlt[2]).kategorie).toBe('eintopf')
+    expect(rezept(gewaehlt[5]).kategorie).toBe('brotzeit')
     expect(rezept(gewaehlt[4]).kategorie).toBe('fisch')
     expect(rezept(gewaehlt[6]).kinderfreundlich).toBe(true)
   })
@@ -68,7 +69,7 @@ describe('Wochenvorschlag', () => {
     const plan = schlageWocheVor('2026-10-17', null, ctx())
     const getauscht = tauscheTag(plan, 2, ctx())
     expect(ids(getauscht)[2]).not.toBe(ids(plan)[2])
-    expect(rezept(ids(getauscht)[2]).kategorie).toBe('nudeln')
+    expect(rezept(ids(getauscht)[2]).kategorie).toBe('eintopf')
     expect(ids(getauscht).filter((_, i) => i !== 2)).toEqual(ids(plan).filter((_, i) => i !== 2))
     expect(new Set(ids(getauscht)).size).toBe(7)
   })
@@ -78,7 +79,7 @@ describe('Überblick', () => {
   it('zählt Fisch, Fleisch und Vegetarisches und findet gemeinsame Saisonzutaten', () => {
     const plan: Plan = {
       start: '2026-10-17',
-      tage: ['kuerbissuppe', 'ofengemuese-feta', 'spaghetti-bolognese', 'thunfisch-nudeln'].map((id) => ({
+      tage: ['kuerbissuppe', 'ofengemuese-feta', 'haehnchen-curry', 'fischstaebchen-pueree'].map((id) => ({
         typ: 'rezept' as const, rezeptId: id, mitResten: true, fixiert: false,
       })),
     }
@@ -105,6 +106,16 @@ describe('Aussortierte Gerichte', () => {
       expect(ids.filter((id) => archiv.has(id))).toEqual([])
       const getauscht = tauscheTag(plan, 0, c).tage[0]
       expect(getauscht.typ === 'rezept' && archiv.has(getauscht.rezeptId)).toBe(false)
+    }
+  })
+})
+
+describe('Neuer Grundstock', () => {
+  it('höchstens ein Nudelgericht je Woche', () => {
+    for (let saat = 1; saat <= 20; saat++) {
+      const plan = schlageWocheVor('2026-11-07', null, ctx({ monat: 11, zufall: zufallAus(saat) }))
+      const nudeln = plan.tage.filter((t) => t.typ === 'rezept' && rezept(t.rezeptId).kategorie === 'nudeln')
+      expect(nudeln.length, `Saat ${saat}`).toBeLessThanOrEqual(1)
     }
   })
 })

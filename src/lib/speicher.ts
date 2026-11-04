@@ -4,9 +4,9 @@ import type {
   Bewertung, Einstellungen, ExtraPosten, Feld, Grundposten, Plan, Rezept, ZutatInfo,
 } from './typen'
 
-/** Samstag bis Freitag: Markttag, Sonntag, dann die Werktage. */
+/** Samstag bis Freitag: Markttag, Sonntag, dann die Werktage. Donnerstag ist Brotzeit. */
 export const START_RASTER: Feld[] = [
-  'gemuese', 'besonders', 'nudeln', 'huelsenfruechte', 'fisch', 'ofen', 'kinderwunsch',
+  'gemuese', 'besonders', 'eintopf', 'reis', 'fisch', 'brotzeit', 'kinderwunsch',
 ]
 
 export interface Zustand {
