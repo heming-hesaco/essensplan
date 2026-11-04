@@ -262,3 +262,28 @@ export function istInSaison(info: ZutatInfo, monat: number): boolean | null {
   if (!info.saison) return null
   return info.saison.includes(monat)
 }
+
+/** Beiwörter, die für den Katalog nichts bedeuten: „1 große Zwiebel“ ist eine Zwiebel. */
+const BEIWOERTER = /^(große[rn]?|kleine[rn]?|mittelgroße[rn]?|frische[rn]?|gehackte[rn]?|getrocknete[rn]?|reife[rn]?)\s+/i
+
+/**
+ * Sucht eine Zutat im Katalog, auch wenn sie anders geschrieben ist als dort: ohne
+ * Klammerzusatz und ohne was nach einem Komma steht, ohne Beiwörter wie „große“ oder
+ * „frische“, in Einzahl oder Mehrzahl (Zwiebel/Zwiebeln, Ei/Eier, Gurken/Gurke).
+ */
+export function findeZutat(name: string, katalog: Katalog): ZutatInfo | null {
+  const grund = name.replace(/\([^)]*\)/g, ' ').split(',')[0].replace(/\s+/g, ' ').trim()
+  const kandidaten = [grund]
+  let ohne = grund
+  while (BEIWOERTER.test(ohne)) ohne = ohne.replace(BEIWOERTER, '')
+  if (ohne !== grund) kandidaten.push(ohne)
+  for (const k of kandidaten) {
+    const formen = [k, `${k}n`, `${k}en`, `${k}e`, `${k}s`, `${k}er`]
+    for (const endung of ['n', 'en', 'e', 's', 'er']) if (k.endsWith(endung) && k.length > endung.length + 2) formen.push(k.slice(0, -endung.length))
+    for (const f of formen) {
+      const info = katalog.get(zutatSchluessel(f))
+      if (info) return info
+    }
+  }
+  return null
+}
