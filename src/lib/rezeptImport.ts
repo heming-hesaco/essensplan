@@ -1,6 +1,6 @@
 import type { ImportRezept } from '../../api/_rezeptAusHtml'
 import type { Rezept } from './typen'
-import { zerlege } from './zutatZeile'
+import { zerlegeZutaten } from './zutatZeile'
 import type { Katalog } from './zutaten'
 
 export type { ImportRezept }
@@ -11,7 +11,7 @@ export type { ImportRezept }
  * zerlegen ließen und im Formular geprüft werden sollten.
  */
 export function alsRezept(imp: ImportRezept, katalog: Katalog, id: string): { rezept: Rezept; unsicher: number[] } {
-  const zeilen = imp.zutaten.map((z) => zerlege(z, katalog))
+  const zeilen = imp.zutaten.flatMap((z) => zerlegeZutaten(z, katalog))
   const unsicher = zeilen.flatMap((z, i) => (z.sicher ? [] : [i]))
   const zutaten = zeilen.map(({ name, menge, einheit }) => ({ name, menge, einheit }))
   return {

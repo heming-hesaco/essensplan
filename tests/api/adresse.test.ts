@@ -20,4 +20,12 @@ describe('Adresse prüfen', () => {
     }
     for (const ip of ['8.8.8.8', '172.32.0.1', '2a00:1450:4001::1']) expect(istPrivateAdresse(ip), ip).toBe(false)
   })
+
+  it('erkennt eingebettete IPv4-Adressen auch in Hex-Schreibweise', () => {
+    for (const ip of ['::ffff:7f00:1', '::7f00:1', '64:ff9b::7f00:1', '::ffff:a00:1', '2002:7f00:1::', '0:0:0:0:0:ffff:7f00:0001']) {
+      expect(istPrivateAdresse(ip), ip).toBe(true)
+    }
+    expect(istPrivateAdresse('::ffff:808:808'), '8.8.8.8').toBe(false)
+    expect(pruefeAdresse('https://[::ffff:127.0.0.1]/').ok).toBe(false)
+  })
 })

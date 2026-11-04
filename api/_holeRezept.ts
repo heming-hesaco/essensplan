@@ -1,5 +1,5 @@
-import { istPrivateAdresse, pruefeAdresse } from './_adresse'
-import { rezeptAusHtml, type ImportRezept } from './_rezeptAusHtml'
+import { istPrivateAdresse, pruefeAdresse } from './_adresse.js'
+import { rezeptAusHtml, type ImportRezept } from './_rezeptAusHtml.js'
 
 /** Namensauflösung und Abruf werden übergeben, damit sich der Ablauf ohne Netz prüfen lässt. */
 export interface Netz {

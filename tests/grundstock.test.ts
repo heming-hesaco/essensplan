@@ -69,6 +69,12 @@ describe('Übergang auf Grundstock 2', () => {
     expect(neu.einstellungen.grundstock).toBe(GRUNDSTOCK)
   })
 
+  it('ein gelöschtes altes Startgericht kommt nicht zurück', async () => {
+    const z = await alterHaushalt()
+    z.rezepte = z.rezepte.filter((r) => r.id !== 'chili-sin-carne')
+    expect(stelleGrundstockUm(z).rezepte.map((r) => r.id)).not.toContain('chili-sin-carne')
+  })
+
   it('altes Vorgaberaster wird ersetzt, eigenes bleibt', async () => {
     expect(stelleGrundstockUm(await alterHaushalt()).raster).toEqual(START_RASTER)
     const eigen = { ...(await alterHaushalt()), raster: [...ALTES_RASTER].reverse() }

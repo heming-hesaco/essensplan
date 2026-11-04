@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { lookup } from 'node:dns/promises'
-import { holeRezept } from './_holeRezept'
+import { holeRezept } from './_holeRezept.js'
 
 /**
  * GET /api/rezept-import?url=… – holt eine Rezeptseite und gibt das Rezept als JSON zurück.

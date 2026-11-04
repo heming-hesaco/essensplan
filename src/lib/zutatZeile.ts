@@ -66,3 +66,21 @@ export function zerlege(zeile: string, katalog: Katalog): ZutatZeile {
   if (!name) return { menge: 1, einheit: 'Stück', name: zeile.trim(), sicher: false }
   return { menge: Math.round(menge * 1000) / 1000, einheit, name: findeZutat(name, katalog)?.name ?? name, sicher: true }
 }
+
+/** Mengenlose Zusätze, die mit dem Gewürz nichts zu tun haben: „etwas Öl“, „n. B. Salz“. */
+const OHNE_MENGE = /^(etwas|wenig|reichlich|ein paar|n\. ?b\.|nach belieben|evtl\.|eventuell|optional)\s+|\s+(nach belieben|zum abschmecken|n\. ?b\.)$/gi
+
+/**
+ * Wie `zerlege`, aber für Zeilen ohne Menge mit einem zweiten Blick: „Salz und Pfeffer“,
+ * „etwas Öl“ oder „Salz, Pfeffer, Muskat“ sind Grundvorrat und werden einzeln eingetragen
+ * (je eine Prise, Öl ein Esslöffel), statt als unbekannte Zutat jede Woche auf dem Zettel
+ * zu landen. Bleibt etwas unbekannt, bleibt es bei der unsicheren Zeile.
+ */
+export function zerlegeZutaten(zeile: string, katalog: Katalog): ZutatZeile[] {
+  const einfach = zerlege(zeile, katalog)
+  if (einfach.sicher) return [einfach]
+  const teile = zeile.replace(OHNE_MENGE, ' ').split(/\s+und\s+|\s*[,/&+]\s*/).map((t) => t.replace(OHNE_MENGE, ' ').trim()).filter(Boolean)
+  const gefunden = teile.map((t) => findeZutat(t, katalog))
+  if (gefunden.length === 0 || gefunden.some((g) => !g?.vorrat)) return [einfach]
+  return gefunden.map((g) => ({ menge: 1, einheit: /öl$/i.test(g!.name) ? 'EL' : 'Prise', name: g!.name, sicher: true }))
+}

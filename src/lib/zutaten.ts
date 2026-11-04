@@ -263,6 +263,9 @@ export function istInSaison(info: ZutatInfo, monat: number): boolean | null {
   return info.saison.includes(monat)
 }
 
+/** Sammelbegriffe aus fremden Rezepten, die im Katalog anders heißen. */
+const ALIAS: Record<string, string> = { 'öl': 'Rapsöl', 'pflanzenöl': 'Rapsöl', 'speiseöl': 'Rapsöl', 'sonnenblumenöl': 'Rapsöl' }
+
 /** Beiwörter, die für den Katalog nichts bedeuten: „1 große Zwiebel“ ist eine Zwiebel. */
 const BEIWOERTER = /^(große[rn]?|kleine[rn]?|mittelgroße[rn]?|frische[rn]?|gehackte[rn]?|getrocknete[rn]?|reife[rn]?)\s+/i
 
@@ -273,7 +276,8 @@ const BEIWOERTER = /^(große[rn]?|kleine[rn]?|mittelgroße[rn]?|frische[rn]?|geh
  */
 export function findeZutat(name: string, katalog: Katalog): ZutatInfo | null {
   const grund = name.replace(/\([^)]*\)/g, ' ').split(',')[0].replace(/\s+/g, ' ').trim()
-  const kandidaten = [grund]
+  const alias = ALIAS[zutatSchluessel(grund)]
+  const kandidaten = alias ? [alias, grund] : [grund]
   let ohne = grund
   while (BEIWOERTER.test(ohne)) ohne = ohne.replace(BEIWOERTER, '')
   if (ohne !== grund) kandidaten.push(ohne)

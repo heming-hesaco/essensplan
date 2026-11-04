@@ -44,7 +44,9 @@ export function stelleGrundstockUm(z: Zustand): Zustand {
     return r.foto?.art === 'eigen' ? { ...neu, foto: r.foto } : neu
   })
   const vorhanden = new Set(rezepte.map((r) => r.id))
-  for (const r of STARTREZEPTE) if (!vorhanden.has(r.id)) rezepte.push(r)
+  // Nur wirklich neue Gerichte ergänzen: ein altes Startgericht, das fehlt, hat der Haushalt
+  // gelöscht – das soll nicht zurückkommen.
+  for (const r of STARTREZEPTE) if (!vorhanden.has(r.id) && ALTE_STARTREZEPTE[r.id] === undefined) rezepte.push(r)
   const altesRaster = z.raster.length === ALTES_RASTER.length && z.raster.every((f, i) => f === ALTES_RASTER[i])
   return {
     ...z,
