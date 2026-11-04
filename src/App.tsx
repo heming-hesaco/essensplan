@@ -7,6 +7,7 @@ import { Einkauf } from './seiten/Einkauf'
 import { Einstellungen } from './seiten/Einstellungen'
 import { KindSeite } from './seiten/Kind'
 import { kindAus } from './lib/wuensche'
+import { GRUNDSTOCK, stelleGrundstockUm } from './lib/grundstock'
 import { PlanSeite } from './seiten/Plan'
 import { Rezepte } from './seiten/Rezepte'
 
@@ -62,6 +63,16 @@ export function App() {
     setZ(neu)
     gemeinsam.melde(alt, neu)
   }
+
+  // Einmal je Haushalt auf den neuen Grundstock umstellen – aber erst, wenn feststeht, ob es
+  // einen gemeinsamen Haushalt gibt, und dieser geladen ist. Sonst würde der Stand des Geräts
+  // umgestellt und gleich darauf vom Haushalt überschrieben.
+  const grundstock = z.einstellungen.grundstock ?? 1
+  const haushaltBereit =
+    !gemeinsam.email || (gemeinsam.haushaltGeprueft && (!gemeinsam.haushalt || gemeinsam.haushalt.einladungscode !== ''))
+  useEffect(() => {
+    if (grundstock < GRUNDSTOCK && haushaltBereit) aendere(stelleGrundstockUm)
+  }, [grundstock, haushaltBereit])
 
   return (
     <div className="app">
