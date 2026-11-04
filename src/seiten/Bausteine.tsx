@@ -5,7 +5,8 @@ import type { Zustand } from '../lib/speicher'
 import { WERTE, type Foto, type Kategorie, type Rezept } from '../lib/typen'
 
 const KATEGORIE_BILD: Record<Kategorie, string> = {
-  nudeln: '🍝', huelsenfruechte: '🫘', fisch: '🐟', ofen: '🍲', gemuese: '🥕', besonders: '🍕',
+  gemuese: '🥕', eintopf: '🍲', ofen: '🥘', reis: '🍚', huelsenfruechte: '🫘', fisch: '🐟',
+  nudeln: '🍝', brotzeit: '🥪', besonders: '🍕',
 }
 
 function useFotoUrl(foto: Foto | undefined): string | null {

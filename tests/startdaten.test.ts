@@ -3,10 +3,15 @@ import { STARTREZEPTE, START_FRUEHSTUECK } from '../src/lib/startrezepte'
 import { START_RASTER } from '../src/lib/speicher'
 import { STARTKATALOG, zutatSchluessel } from '../src/lib/zutaten'
 import { passtInsFeld } from '../src/lib/planer'
+import { KATEGORIEN } from '../src/lib/typen'
 
 const katalog = new Set(STARTKATALOG.map((z) => zutatSchluessel(z.name)))
 
 describe('Startdaten', () => {
+  it('Kategorien in fester Reihenfolge', () => {
+    expect(Object.keys(KATEGORIEN)).toEqual(['gemuese', 'eintopf', 'ofen', 'reis', 'huelsenfruechte', 'fisch', 'nudeln', 'brotzeit', 'besonders'])
+  })
+
   it('jede Zutat der Startrezepte steht im Katalog – sonst landet sie unbemerkt bei Edeka', () => {
     const fehlend = STARTREZEPTE.flatMap((r) =>
       r.zutaten.filter((z) => !katalog.has(zutatSchluessel(z.name))).map((z) => `${r.name}: ${z.name}`),

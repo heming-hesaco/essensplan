@@ -199,6 +199,9 @@ button:disabled { opacity: 0.5; cursor: default; }
 .kat-ofen { background: linear-gradient(135deg, #f5d5c5, #e3a083); }
 .kat-gemuese { background: linear-gradient(135deg, #dcefd8, #a8d39e); }
 .kat-besonders { background: linear-gradient(135deg, #f6d6dc, #e7a0ae); }
+.kat-eintopf { background: linear-gradient(135deg, #f3e2c8, #d9b47a); }
+.kat-reis { background: linear-gradient(135deg, #f4f0dc, #dccf93); }
+.kat-brotzeit { background: linear-gradient(135deg, #efe0d0, #c9a27c); }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) .ersatz { filter: brightness(0.75); }
 }

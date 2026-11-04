@@ -70,14 +70,17 @@ export interface RezeptZutat {
 
 /** Kategorie eines Gerichts, passend zu den Feldern des Wochenrasters. */
 export type Kategorie =
-  | 'nudeln' | 'huelsenfruechte' | 'fisch' | 'ofen' | 'gemuese' | 'besonders'
+  | 'gemuese' | 'eintopf' | 'ofen' | 'reis' | 'huelsenfruechte' | 'fisch' | 'nudeln' | 'brotzeit' | 'besonders'
 
 export const KATEGORIEN: Record<Kategorie, string> = {
-  nudeln: 'Nudeln',
+  gemuese: 'Kartoffeln & Gemüse',
+  eintopf: 'Eintopf & Suppe',
+  ofen: 'Auflauf & Ofen',
+  reis: 'Reis & Pfanne',
   huelsenfruechte: 'Hülsenfrüchte',
   fisch: 'Fisch',
-  ofen: 'Ofen & Blech',
-  gemuese: 'Gemüse & Kartoffeln',
+  nudeln: 'Nudeln',
+  brotzeit: 'Brotzeit',
   besonders: 'Etwas Besonderes',
 }
 
@@ -102,6 +105,10 @@ export interface Rezept {
   zutaten: RezeptZutat[]
   anleitung: string
   foto?: Foto
+  /** Aussortiert: kommt nicht mehr in Vorschlag und Auswahl, alte Pläne zeigen es weiter. */
+  archiviert?: boolean
+  /** Link der Seite, von der das Rezept übernommen wurde. */
+  quelle?: string
 }
 
 /** Was im Wochenraster an einem Tag vorgesehen ist. */
@@ -160,6 +167,10 @@ export interface Einstellungen {
   /** Zusätzliche Portionen, wenn fürs Mittagessen am nächsten Tag mitgekocht wird. */
   mittagsportionen: number
   personen: Person[]
+  /** Fassung des Grundstocks an Startgerichten; fehlt = 1. */
+  grundstock?: number
+  /** Schnellknöpfe auf dem Einkaufszettel. */
+  schnellposten?: { name: string; laden: Laden }[]
 }
 
 export interface ExtraPosten {
